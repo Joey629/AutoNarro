@@ -1,0 +1,50 @@
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Participant data & outputs (do not publish) ---
+narratives.csv
+new_data.csv
+batch_predictions_summary.csv
+**/predictions_with_metadata*.csv
+
+# Optional: ignore all CSV under project root (uncomment if you want zero CSV in repo)
+# *.csv
+# !sample_new_data_template.csv
+
+# --- Large model artifacts (use Git LFS or release uploads) ---
+*.pth
+*.pt
+*.bin
+*.joblib
+*.pkl
+*.npy
+*.safetensors
+model_b_bart_structured_generator/
+model_b_bart_structured_generator_output/
+automated_champion_models/
+champion_models*/
+best_model_*/
+analysis_results*/
+batch_reports/
+【Archived】*/
+
+# --- Run outputs / error dumps (may contain study-related rows) ---
+error_analysis_*/
+regression_error_analysis_*/
+regression_results_*/
+deep_analysis_results*/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
