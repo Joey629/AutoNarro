@@ -1,4 +1,4 @@
-# analysis_reg_update_12.py
+# analyze_regression_bert_full.py
 # [目标]：
 # 1. 加载 BERT 模型提取文本特征 (Global & Hierarchical)。
 # 2. 拼接语言学特征，构建完整的特征矩阵。

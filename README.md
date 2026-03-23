@@ -23,6 +23,8 @@ Code for cue-enhanced BERT multi-task classification (A2–A16), BART-based cue 
 - **`Annotation.md`** — index of all Python scripts and their roles.  
 - **`docs/APPENDIX_D_Code_Availability.md`** — manuscript-style appendix (code availability & reproducibility).
 
+**Script naming:** `train_*` = training; `analyze_*` = analysis & diagnostics; `bart_cue_*` = BART cue pipeline; `*_ablation_*` = multitask ablations. See `Annotation.md` for the full map (legacy names like `train_model_b_t5_generator` / `analysis_reg_update_12` were renamed for clarity).
+
 ## Data policy
 
 **Raw transcripts and study CSVs (`narratives.csv`, `new_data.csv`, etc.) are git-ignored** to protect participants. Only the anonymized column template `sample_new_data_template.csv` is versioned.

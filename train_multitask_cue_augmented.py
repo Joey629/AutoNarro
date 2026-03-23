@@ -1,4 +1,4 @@
-# train_clue_augmented_model.py
+# train_multitask_cue_augmented.py
 # 线索增强多任务 BERT 分类训练（最终版）：问题模板 + 线索词，输出多任务模型权重。
 
 import pandas as pd

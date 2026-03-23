@@ -1,4 +1,4 @@
-# train_clue_augmented_noIST.py
+# train_multitask_ablation_no_ist.py（原 noIST：移除 IST 线索词）
 # 实验 B：保留问题模板，移除 IST Words
 # 适配：Apple M4 Pro (MPS), Batch Size=10
 

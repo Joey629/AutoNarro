@@ -1,4 +1,4 @@
-# analysis_reg.py
+# analyze_regression_metadata.py
 # [目标]：
 # 1. 加载 "Run 5" 训练好的 3 个冠军 XGBoost 模型。
 # 2. 对 *所有* 564 条数据进行预测。
@@ -330,7 +330,7 @@ def analyze_interaction(results_df, cat_col, cont_col, score_col, output_dir, pl
 # --- 主执行函数 ---
 # =============================================================================
 def main():
-    print("--- 开始执行优化版分析脚本 (analysis_reg_optimized.py) ---")
+    print("--- 开始执行 analyze_regression_metadata.py ---")
     
     # 创建输出文件夹
     output_dir = CONFIG['analysis_output_dir']

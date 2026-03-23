@@ -1,5 +1,5 @@
-# analyze_errors.py
-# 多任务分类（A2–A16）错误分析：与 train_clue_augmented_model / train.py 兼容，可指定任务做详细错误分析。
+# analyze_multitask_errors.py
+# 多任务分类（A2–A16）错误分析：与 train_multitask_cue_augmented / train.py 兼容，可指定任务做详细错误分析。
 
 import pandas as pd
 import torch

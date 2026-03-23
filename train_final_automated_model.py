@@ -1,7 +1,7 @@
 # train_final_automated_model.py
 # [目标]：训练一个“全自动”的回归模型 (模块 D)。
 # [策略]：
-# 1. 导入 'bart_predictor.py' (B类) 和 'automated_feature_extractor.py' (A类+B扩展)。
+# 1. 导入 'bart_cue_predictor.py' (B类) 和 'automated_feature_extractor.py' (A类+B扩展)。
 # 2. 自动计算 'auto_TNU', 'auto_IS_Men_count' 和 'predicted_ist_words'。
 # 3. [重要] 仅使用这些自动化特征 + BERT 特征(模块 C)来训练 XGBoost。
 # 4. 保存训练好的 3 个全自动 XGBoost 模型。
@@ -26,11 +26,11 @@ import warnings
 try:
     # [来自: 2] (automated_feature_extractor.py)
     from automated_feature_extractor import analyze_automated_features
-    # [来自: 1] (bart_predictor.py)
-    from bart_predictor import BartPredictor
+    # [来自: 1] (bart_cue_predictor.py)
+    from bart_cue_predictor import BartPredictor
 except ImportError as e:
     print(f"❌ 错误: 找不到自动化脚本。 {e}")
-    print("请确保 'automated_feature_extractor.py' 和 'bart_predictor.py' 在同一个文件夹中。")
+    print("请确保 'automated_feature_extractor.py' 和 'bart_cue_predictor.py' 在同一个文件夹中。")
     exit()
 
 warnings.filterwarnings("ignore")
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     try:
         bart_predictor = BartPredictor(model_dir=CONFIG['bart_model_dir'])
     except Exception as e:
-        print("  ❌ 无法加载 BART 模型。请确保已运行 'train_model_b_t5_generator.py' 并已保存模型。")
+        print("  ❌ 无法加载 BART 模型。请确保已运行 'train_bart_cue_generator.py' 并已保存模型。")
         exit()
         
     predicted_words_list = []

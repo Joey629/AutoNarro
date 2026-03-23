@@ -36,11 +36,11 @@ import re # 用于 Jieba
 try:
     # [来自: 2] (linguistic_feature_extractor.py)
     from linguistic_feature_extractor import extract_calculable_features
-    # [来自: 1] (bart_predictor.py)
-    from bart_predictor import BartPredictor
+    # [来自: 1] (bart_cue_predictor.py)
+    from bart_cue_predictor import BartPredictor
 except ImportError as e:
     print(f"❌ 错误: 找不到自动化脚本。 {e}")
-    print("请确保 'linguistic_feature_extractor.py' 和 'bart_predictor.py' 在同一个文件夹中。")
+    print("请确保 'linguistic_feature_extractor.py' 和 'bart_cue_predictor.py' 在同一个文件夹中。")
     exit()
 
 # [来自: 2] (automated_feature_extractor.py)
@@ -65,7 +65,7 @@ NEW_META_DATA = {
 
 # 3. 确保这些路径是正确的
 MODEL_PATHS = {
-    # 来自 'train_model_b_t5_generator.py' [来自: 1]
+    # 来自 'train_bart_cue_generator.py' [来自: 1]
     'bart_model_dir': './model_b_bart_structured_generator',
     
     # [新] 来自 'train_final_automated_model.py'；若不存在则自动尝试 champion_xgb_folder
@@ -73,11 +73,11 @@ MODEL_PATHS = {
     # 宏观回归备用：来自 regression_analysis_final.py 的 xgb_model_*.joblib（与论文基准一致）
     'champion_xgb_folder': 'champion_models_best_model_20251001-111255_epoch10_macrof1_0.7067',
     
-    # 来自 'train_clue_augmented_model.py'
+    # 来自 'train_multitask_cue_augmented.py'
     'bert_classifier_weights': 'best_model_20251001-111255_epoch10_macrof1_0.7067.pth',
     
-    # 来自 'analysis_reg.py' (我们的基准数据库) [来自: 3]
-    # !! 确保这个路径指向你 'analysis_reg.py' 生成的 *回归* 基准库 !!
+    # 来自 'analyze_regression_metadata.py' 等流程产出的基准数据库 [来自: 3]
+    # !! 确保此路径指向 *回归* 基准库 CSV !!
     'benchmark_db_regression': '【Archived】deep_analysis_results_champion_models_best_model_20251001-111255_epoch10_macrof1_0.7067/predictions_with_metadata_ALL_DATA.csv',
     
     # [新] 指向你的 *多任务* 基准库 [来自: 3]
@@ -233,7 +233,7 @@ class AutomatedNarrativePredictor:
             print(f"  [✓] 成功加载 {len(self.benchmark_db_reg)} 条 *回归* 基准数据库记录。")
         except FileNotFoundError:
             print(f"❌ 致命错误: 找不到回归基准数据库: {model_paths['benchmark_db_regression']}")
-            print(f"  请先运行 'analysis_reg.py' 来生成基准文件。")
+            print(f"  请先运行回归分析流程（如 analyze_regression_metadata.py）生成基准文件。")
             raise
             
         try:

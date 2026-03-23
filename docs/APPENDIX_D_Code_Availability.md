@@ -7,11 +7,11 @@ To support reproducibility, all model implementations, preprocessing pipelines, 
    - Ten-dimensional automated feature extraction combining BART-generated cues and keyword-based internal-state counts (`automated_feature_extractor.py`).
 
 2. **BART-based cue generation (Module B)**  
-   - Training script for the sequence-to-sequence cue generator (`train_model_b_t5_generator.py`).  
-   - Inference wrapper for generating `predicted_ist_words` from new narratives (`bart_predictor.py`).
+   - Training script for the sequence-to-sequence cue generator (`train_bart_cue_generator.py`).  
+   - Inference wrapper for generating `predicted_ist_words` from new narratives (`bart_cue_predictor.py`).
 
 3. **Cue-enhanced BERT micro-structural classifier (Module E)**  
-   - Training scripts for the multi-task (A2–A16) classifier with LoRA, including the schema-guided QA template set aligned with the study protocol (`train.py`, `train_clue_augmented_model.py`, and ablation variants in `train_clue_augmented_noQA.py`, `train_clue_augmented_noist.py`).  
+   - Training scripts for the multi-task (A2–A16) classifier with LoRA, including the schema-guided QA template set aligned with the study protocol (`train.py`, `train_multitask_cue_augmented.py`, and ablation variants `train_multitask_ablation_no_qa.py`, `train_multitask_ablation_no_ist.py`).  
    - Question templates per story type (`cat`, `dog`, `bird`, `goat`) are defined in code and match Appendix B of the manuscript.
 
 4. **XGBoost-based macro-structural regression (Module D)**  
@@ -22,8 +22,8 @@ To support reproducibility, all model implementations, preprocessing pipelines, 
    - Single entry point: BART → Jieba/auto features → BERT multitask → XGBoost regression → norm-referenced benchmarks → optional per-participant parent-facing reports (`predict_and_report.py`).
 
 6. **Evaluation and analysis**  
-   - Micro-structural classification: error analysis and supplementary analyses (`analyze_errors.py`, `analysis.py`).  
-   - Macro-structural regression: error analysis (`analyze_errors_regression.py`), extended regression analytics (`analysis_reg.py`, `analysis_reg_update_12.py`).
+   - Micro-structural classification: error analysis and supplementary analyses (`analyze_multitask_errors.py`, `analyze_multitask_metadata.py`).  
+   - Macro-structural regression: error analysis (`analyze_regression_errors.py`), extended regression analytics (`analyze_regression_metadata.py`, `analyze_regression_bert_full.py`).
 
 7. **Norm-referenced comparison**  
    - Benchmark CSV paths are configurable in `predict_and_report.py` (regression and multitask reference databases). Percentile or group-mean comparisons are computed in-script against these references (see Appendix E in the manuscript for the norm construction).
@@ -46,7 +46,7 @@ To support reproducibility, all model implementations, preprocessing pipelines, 
 
 **Appendix D. Code Availability and Reproducibility**
 
-To support reproducibility, all model implementations, preprocessing pipelines, and evaluation scripts are made available via a public repository. The repository includes: (i) Jieba-based tokenization and ten-dimensional automated feature extraction (`linguistic_feature_extractor.py`, `automated_feature_extractor.py`); (ii) training and inference for the BART-based cue generation module (`train_model_b_t5_generator.py`, `bart_predictor.py`); (iii) training scripts for the cue-enhanced BERT micro-structural classifier with the complete schema-guided QA template set (`train.py`, `train_clue_augmented_model.py`, and ablations); (iv) training scripts for XGBoost-based macro-structural regression (`regression_analysis_final.py`, `train_final_automated_model.py`); (v) end-to-end prediction and norm-referenced reporting (`predict_and_report.py`); and (vi) evaluation and error-analysis utilities (`analysis.py`, `analysis_reg.py`, `analysis_reg_update_12.py`, `analyze_errors.py`, `analyze_errors_regression.py`). Raw narrative transcripts are not included in order to protect participant confidentiality in accordance with ethical approval. A minimal anonymized CSV template (`sample_new_data_template.csv`) illustrates the required input format.
+To support reproducibility, all model implementations, preprocessing pipelines, and evaluation scripts are made available via a public repository. The repository includes: (i) Jieba-based tokenization and ten-dimensional automated feature extraction (`linguistic_feature_extractor.py`, `automated_feature_extractor.py`); (ii) training and inference for the BART-based cue generation module (`train_bart_cue_generator.py`, `bart_cue_predictor.py`); (iii) training scripts for the cue-enhanced BERT micro-structural classifier with the complete schema-guided QA template set (`train.py`, `train_multitask_cue_augmented.py`, and ablations); (iv) training scripts for XGBoost-based macro-structural regression (`regression_analysis_final.py`, `train_final_automated_model.py`); (v) end-to-end prediction and norm-referenced reporting (`predict_and_report.py`); and (vi) evaluation and error-analysis utilities (`analyze_multitask_metadata.py`, `analyze_regression_metadata.py`, `analyze_regression_bert_full.py`, `analyze_multitask_errors.py`, `analyze_regression_errors.py`). Raw narrative transcripts are not included in order to protect participant confidentiality in accordance with ethical approval. A minimal anonymized CSV template (`sample_new_data_template.csv`) illustrates the required input format.
 
 **Public repository:** https://github.com/Joey629/BERT  
 

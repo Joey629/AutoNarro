@@ -1,4 +1,4 @@
-# analyze_errors_regression.py
+# analyze_regression_errors.py
 # 用于回归模型的详细错误分析脚本
 # 功能：加载保存的 XGBoost 模型，在测试集上进行预测，并筛选出预测误差最大的样本进行分析。
 

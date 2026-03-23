@@ -1,4 +1,4 @@
-# train_clue_augmented_noQA.py
+# train_multitask_ablation_no_qa.py
 # 实验 A：移除自然语言问题，仅保留任务ID
 # 适配：Apple M4 Pro (MPS), Batch Size=10
 

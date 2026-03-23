@@ -1,6 +1,6 @@
-# bart_predictor.py
-# [目标]：加载你训练好的 BART (Seq2Seq) 模型，并提供一个简单的预测函数。
-# [来自: 1] (基于 train_model_b_t5_generator.py)
+# bart_cue_predictor.py
+# [目标]：加载训练好的 BART (Seq2Seq) 线索生成模型，并提供 predict_ist_words。
+# [来自: 1] (基于 train_bart_cue_generator.py)
 
 import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -27,7 +27,7 @@ class BartPredictor:
             print("  [✓] BART 模型加载成功。")
         except Exception as e:
             print(f"❌ 错误: 加载 BART 模型失败。请确保 '{model_dir}' 路径正确。")
-            print(f"  请先运行 'train_model_b_t5_generator.py' 来训练并保存 BART 模型。")
+            print(f"  请先运行 'train_bart_cue_generator.py' 来训练并保存 BART 模型。")
             print(f"  {e}")
             raise
 

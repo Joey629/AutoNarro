@@ -124,9 +124,9 @@ def analyze_automated_features(text, predicted_ist_words):
     return feature_vector, feature_names
 
 if __name__ == "__main__":
-    # --- 演示 (需要 bart_predictor.py) ---
+    # --- 演示 (需要 bart_cue_predictor.py) ---
     try:
-        from bart_predictor import BartPredictor
+        from bart_cue_predictor import BartPredictor
         
         new_text = "小猫想抓蝴蝶。它跳了起来，但是没有抓到。小猫很难过。"
         
@@ -148,8 +148,8 @@ if __name__ == "__main__":
         #  ('auto_IS_Emo_count', 1), ('auto_IS_Men_count', 1), ('auto_IS_Ling_count', 0)]
     
     except ImportError:
-        print("❌ 错误: 找不到 bart_predictor.py。请先完成步骤一。")
+        print("❌ 错误: 找不到 bart_cue_predictor.py。请先完成步骤一。")
     except Exception as e:
         print("\n--- 演示失败 ---")
         print(f"错误: {e}")
-        print("请确保 './bart_model' 文件夹存在，且 'train_model_b_t5_generator.py' [来自: 1] 已成功运行。")
+        print("请确保 './bart_model' 文件夹存在，且 'train_bart_cue_generator.py' [来自: 1] 已成功运行。")
