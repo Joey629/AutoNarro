@@ -39,3 +39,15 @@ To support reproducibility, all model implementations, preprocessing pipelines, 
 - Python dependencies follow standard `transformers`, `torch`, `jieba`, `xgboost`, `peft`, and `pandas` usage; a `requirements.txt` is provided in the repository root.
 
 **Script index.** A concise map of all Python entry points is maintained in **`Annotation.md`** at the repository root.
+
+---
+
+## Copy-paste block for the manuscript (English)
+
+**Appendix D. Code Availability and Reproducibility**
+
+To support reproducibility, all model implementations, preprocessing pipelines, and evaluation scripts are made available via a public repository. The repository includes: (i) Jieba-based tokenization and ten-dimensional automated feature extraction (`linguistic_feature_extractor.py`, `automated_feature_extractor.py`); (ii) training and inference for the BART-based cue generation module (`train_model_b_t5_generator.py`, `bart_predictor.py`); (iii) training scripts for the cue-enhanced BERT micro-structural classifier with the complete schema-guided QA template set (`train.py`, `train_clue_augmented_model.py`, and ablations); (iv) training scripts for XGBoost-based macro-structural regression (`regression_analysis_final.py`, `train_final_automated_model.py`); (v) end-to-end prediction and norm-referenced reporting (`predict_and_report.py`); and (vi) evaluation and error-analysis utilities (`analysis.py`, `analysis_reg.py`, `analysis_reg_update_12.py`, `analyze_errors.py`, `analyze_errors_regression.py`). Raw narrative transcripts are not included in order to protect participant confidentiality in accordance with ethical approval. A minimal anonymized CSV template (`sample_new_data_template.csv`) illustrates the required input format.
+
+**Public repository:** https://github.com/Joey629/BERT  
+
+For double-blind review, substitute the URL above with the anonymized repository link required by the venue (e.g. https://anonymous.4open.science/r/XXXX). The repository will retain full author attribution upon acceptance.
