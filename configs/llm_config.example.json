@@ -1,0 +1,9 @@
+{
+  "provider": "deepseek",
+  "model": "deepseek-chat",
+  "base_url": "https://api.deepseek.com",
+  "api_key_env": "DEEPSEEK_API_KEY",
+  "max_tokens": 1024,
+  "temperature": 0.4,
+  "system_prompt": "你是儿童叙事能力辅导助手，面向教师与家长。你必须：1) 不给出医学诊断；2) 不修改或编造评估分数；3) 建议具体、可操作、适合4-6岁；4) 引用用户提供的评估结果与常模对比。"
+}

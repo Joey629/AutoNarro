@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <circle cx="620" cy="90" r="55" fill="#fef9c3" opacity="0.95"/>
+  <circle cx="600" cy="78" r="48" fill="#1e3a5f"/>
+  <circle cx="400" cy="72" r="2.5" fill="#fde68a" opacity="0.9"/>
+  <circle cx="606" cy="272" r="3" fill="#fde68a" opacity="0.9"/>
+  <circle cx="391" cy="171" r="3" fill="#fde68a" opacity="0.9"/>
+  <circle cx="435" cy="240" r="3" fill="#fde68a" opacity="0.9"/>
+  <circle cx="81" cy="254" r="3" fill="#fde68a" opacity="0.9"/>
+  <path d="M120 420 Q200 360 280 420 T440 420" stroke="#94a3b8" stroke-width="3" fill="none" opacity="0.6"/>
+  <text x="400" y="200" text-anchor="middle" font-size="28" fill="#e2e8f0" font-family="sans-serif">← 银河</text>
+  <circle cx="400" cy="300" r="28" fill="#fde047" stroke="#f59e0b" stroke-width="3"/><circle cx="392" cy="294" r="4" fill="#1e293b"/><circle cx="408" cy="294" r="4" fill="#1e293b"/>
+</svg>

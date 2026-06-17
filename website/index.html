@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Narro — 4–6 岁儿童叙事自动评估。narro.tech" />
+  <title>Narro · 儿童叙事智能评估</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/website/css/site.css" />
+</head>
+<body class="site">
+  <div class="site-ambient" aria-hidden="true">
+    <div class="site-ambient-blob site-ambient-blob--1"></div>
+    <div class="site-ambient-blob site-ambient-blob--2"></div>
+    <div class="site-ambient-blob site-ambient-blob--3"></div>
+    <div class="site-ambient-blob site-ambient-blob--4"></div>
+    <div class="site-ambient-mesh"></div>
+    <div class="site-ambient-shine"></div>
+  </div>
+
+  <header class="site-header">
+    <div class="site-container site-header-inner">
+      <a href="/" class="site-logo" aria-label="Narro 首页">
+        <img src="/static/images/narro-logo.png" alt="Narro" class="site-logo-img" width="241" height="83" />
+      </a>
+      <nav class="site-nav" aria-label="主导航">
+        <a href="#ways">使用场景</a>
+        <a href="#features">产品能力</a>
+        <a href="#how">使用流程</a>
+        <a href="#trust">数据安全</a>
+      </nav>
+      <div class="site-header-actions">
+        <a href="/app" class="btn btn-ghost hidden-mobile">登录工作台</a>
+        <a href="/app" class="btn btn-primary">免费试用</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="site-container hero-grid">
+        <div class="hero-copy">
+          <div class="hero-eyebrow">
+            <span class="hero-eyebrow-dot" aria-hidden="true"></span>
+            4–6 岁中文叙事 · 专家常模对照
+          </div>
+          <h1>把每一次讲故事，变成可见的成长</h1>
+          <p class="hero-lead">
+            Narro 为幼儿园与研究机构提供叙事自动分析：宏观 SS（故事结构）、宏观 SC（情节完整性）、语言产出，以及面向教师与家长的读懂报告与 AI 辅导。
+          </p>
+          <div class="hero-actions">
+            <a href="/app" class="btn btn-primary btn-lg">进入工作台</a>
+            <a href="#features" class="btn btn-outline btn-lg">了解能力</a>
+          </div>
+          <p class="hero-note">非诊断工具 · 模型输出仅供参考</p>
+        </div>
+        <div class="hero-mock" aria-hidden="true">
+          <div class="hero-mock-frame">
+            <div class="hero-mock-bar">
+              <span class="hero-mock-dot"></span>
+              <span class="hero-mock-dot"></span>
+              <span class="hero-mock-dot"></span>
+              <span class="hero-mock-title">Narro 工作台</span>
+            </div>
+            <div class="hero-mock-body">
+              <div class="mock-bubble bot">宏观 SC <strong>6.2</strong> · SS <strong>9/15</strong> · 高于同龄专家常模</div>
+              <div class="mock-bubble user">孩子讲完了小猫捉蝴蝶的故事…</div>
+              <div class="mock-bubble bot">建议：练习用「因为 / 所以」连接两个情节。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip">
+      <div class="site-container">
+        <p>QiDeBERTa 宏观 SS · BART 线索 · XGBoost 宏观 SC · 专家标注常模</p>
+      </div>
+    </section>
+
+    <section class="section" id="ways">
+      <div class="site-container">
+        <div class="section-head">
+          <h2>为园所与研究者设计</h2>
+          <p>从单次评估到班级追踪，一套系统覆盖日常教学与科研场景。</p>
+        </div>
+        <div class="ways-grid">
+          <article class="way-card">
+            <h3>面向教师与家长</h3>
+            <p>看图讲故事、语音转写或文本录入，秒级生成可读摘要与练习建议，无需手工打分。</p>
+          </article>
+          <article class="way-card">
+            <h3>面向园所管理</h3>
+            <p>班级批量评估、纵向对比与筛查预警，帮助管理者发现需要关注的儿童（非医学诊断）。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="site-container">
+        <div class="feature-rows">
+          <div class="feature-row">
+            <div class="feature-row-copy">
+              <p class="feature-row-label">研究助手</p>
+              <h3>基于真实叙事材料分析</h3>
+            </div>
+            <div class="feature-row-detail">
+              <p>输入孩子的讲述文本或转写稿，系统自动提取宏观 SS（故事结构 A2–A16）、宏观 SC（情节完整性），以及 TNW、MLU 等语言产出指标。</p>
+              <p>报告清晰区分「模型预测」与「专家常模」，便于对照同龄同组水平。</p>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feature-row-copy">
+              <p class="feature-row-label">可读产出</p>
+              <h3>拿到能直接用的报告</h3>
+            </div>
+            <div class="feature-row-detail">
+              <p>生成面向教师与家长的文字摘要、分项得分与薄弱 SS 要素提示，支持导出 TXT / CSV。</p>
+              <p>记录页内置 Narro，可针对单次评估追问练习建议。</p>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feature-row-copy">
+              <p class="feature-row-label">长期追踪</p>
+              <h3>让好的评估可重复</h3>
+            </div>
+            <div class="feature-row-detail">
+              <p>「我的记录」保存每次测评，洞察页汇总进步趋势、告警与薄弱项，支持多次对比观察成长轨迹。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-head" style="margin-top: 5rem">
+          <h2>核心能力</h2>
+        </div>
+        <div class="bento">
+          <article class="bento-card">
+            <div class="bento-icon" aria-hidden="true">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <h3>多维度自动评分</h3>
+            <p>宏观 SS（A2–A16）、宏观 SC（SC_E1–E3）、Jieba 语言指标，一次分析全部呈现。</p>
+          </article>
+          <article class="bento-card featured">
+            <div class="bento-icon" aria-hidden="true">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <h3>专家常模对照</h3>
+            <p>与标注语料库同龄同组对比，区分预测分与常模参考。</p>
+          </article>
+          <article class="bento-card">
+            <div class="bento-icon" aria-hidden="true">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            </div>
+            <h3>Narro · 管理后台</h3>
+            <p>AI 练习建议、班级管理与筛查预警（非医学诊断）。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how">
+      <div class="site-container">
+        <div class="section-head">
+          <h2>三步完成评估</h2>
+        </div>
+        <div class="steps-row">
+          <div class="step-item">
+            <span class="step-num">1</span>
+            <h3>讲述或录入</h3>
+            <p>看图讲故事、语音转写或直接粘贴文本</p>
+          </div>
+          <div class="step-item">
+            <span class="step-num">2</span>
+            <h3>自动分析</h3>
+            <p>秒级生成结构与语言报告</p>
+          </div>
+          <div class="step-item">
+            <span class="step-num">3</span>
+            <h3>跟进成长</h3>
+            <p>导出、问 Narro、多次测评对比</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="site-container">
+        <h2>准备好试点了吗？</h2>
+        <p>支持私有化部署、API 密钥与 HTTPS；专家语料不对外提供下载。</p>
+        <div class="hero-actions">
+          <a href="/app" class="btn btn-primary btn-lg">打开工作台</a>
+          <a href="#trust" class="btn btn-outline btn-lg">安全说明</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="trust">
+      <div class="site-container">
+        <div class="trust-panel">
+          <h2>数据与安全承诺</h2>
+          <ul class="trust-list">
+            <li><span class="trust-check" aria-hidden="true">✓</span>专家标注语料仅用于服务端常模统计，不提供 HTTP 下载</li>
+            <li><span class="trust-check" aria-hidden="true">✓</span>支持机构私有部署、访问密钥与传输加密</li>
+            <li><span class="trust-check" aria-hidden="true">✓</span>儿童信息建议使用脱敏 ID 存储</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-container site-footer-inner">
+      <div>
+        <p class="site-footer-brand">Narro.tech</p>
+        <p class="site-footer-meta">儿童叙事自动评估 · 非诊断工具</p>
+      </div>
+      <a href="/app" class="btn btn-outline">进入工作台</a>
+    </div>
+  </footer>
+</body>
+</html>

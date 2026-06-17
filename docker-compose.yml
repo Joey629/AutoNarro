@@ -1,0 +1,17 @@
+# Narro POC — 一键启动（需本机 models/ 与 data/ 已就位）
+#
+#   docker compose up --build
+#   浏览器打开 http://127.0.0.1:8000
+
+services:
+  narro:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - ./data:/app/data
+      - ./configs:/app/configs:ro
+    environment:
+      - PORT=8000
+    restart: unless-stopped

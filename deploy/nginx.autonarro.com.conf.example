@@ -1,0 +1,31 @@
+# /etc/nginx/sites-available/autonarro.com
+# 复制: sudo cp deploy/nginx.autonarro.com.conf.example /etc/nginx/sites-available/autonarro.com
+# 启用: sudo ln -sf /etc/nginx/sites-available/autonarro.com /etc/nginx/sites-enabled/
+# 证书: sudo certbot --nginx -d autonarro.com -d www.autonarro.com
+
+limit_req_zone $binary_remote_addr zone=autonarro:10m rate=30r/m;
+
+server {
+    listen 443 ssl http2;
+    server_name autonarro.com www.autonarro.com;
+
+    ssl_certificate     /etc/letsencrypt/live/autonarro.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/autonarro.com/privkey.pem;
+
+    client_max_body_size 20m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        limit_req zone=autonarro burst=20 nodelay;
+    }
+}
+
+server {
+    listen 80;
+    server_name autonarro.com www.autonarro.com;
+    return 301 https://$host$request_uri;
+}

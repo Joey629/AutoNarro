@@ -1,0 +1,45 @@
+{
+  "product_name": "Narro 儿童叙事自动评估",
+  "product_version": "v4 beta",
+  "model_registry_version": "narro_v4",
+  "terminology": {
+    "ss": "宏观 SS（故事结构 · A2–A16）",
+    "sc": "宏观 SC（情节完整性 · SC_E1–E3）",
+    "note": "对齐 MAIN：SS 为故事语法数量维度；SC 为 GAO 情节完整性维度。"
+  },
+  "model_stack": [
+    {
+      "step": 1,
+      "role": "叙事线索",
+      "base_model": "uer/bart-base-chinese-cluecorpussmall",
+      "weights": "models/bart_narro_v4/"
+    },
+    {
+      "step": 2,
+      "role": "宏观 SS（故事结构 A2–A16）",
+      "base_model": "Morton-Li/QiDeBERTa-base",
+      "weights": "models/micro_narro_v4.pth",
+      "note": "在儿童叙事语料上 LoRA 微调；15 项故事结构二分类（A2–A16）"
+    },
+    {
+      "step": 3,
+      "role": "宏观 SC（情节完整性 SC_E1–E3）",
+      "model": "XGBoost",
+      "weights": "models/macro_xgb_narro_v4/"
+    }
+  ],
+  "micro_model_file": "models/micro_narro_v4.pth",
+  "micro_model_label": "QiDeBERTa-base（宏观 SS）",
+  "micro_base_model": "Morton-Li/QiDeBERTa-base",
+  "bart_model_dir": "models/bart_narro_v4",
+  "bart_model_label": "uer/bart-base-chinese（线索）",
+  "macro_model_dir": "models/macro_xgb_narro_v4",
+  "macro_model_label": "XGBoost（宏观 SC）",
+  "reference_corpus": "data/narratives.csv",
+  "reference_corpus_narratives": 564,
+  "age_range": "4–6 岁",
+  "story_themes": ["小猫与蝴蝶", "小狗与香肠", "小鸟一家", "小羊与狐狸"],
+  "task_types": ["讲述 (Telling)", "复述 (Retelling)"],
+  "disclaimer": "本系统输出仅供研究与发展参考，不构成医学或心理诊断结论。评估结果依赖自动模型与常模库，请勿单独作为教育或临床决策依据。涉及儿童数据请遵守机构伦理与隐私规定。",
+  "non_diagnostic_notice": "非诊断工具 · 模型自动评分 · 需专业人员解读"
+}

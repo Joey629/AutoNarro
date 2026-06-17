@@ -1,0 +1,32 @@
+# /etc/nginx/sites-available/narro.tech
+# 试点域名；与 narro.ai 二选一或同时 server_name 指向同一 upstream
+
+limit_req_zone $binary_remote_addr zone=narro:10m rate=30r/m;
+
+server {
+    listen 443 ssl http2;
+    server_name narro.tech www.narro.tech;
+
+    ssl_certificate     /etc/letsencrypt/live/narro.tech/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/narro.tech/privkey.pem;
+
+    client_max_body_size 20m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        limit_req zone=narro burst=20 nodelay;
+    }
+}
+
+server {
+    listen 80;
+    server_name narro.tech www.narro.tech;
+    return 301 https://$host$request_uri;
+}
+
+# 若同时持有 narro.ai，可复制本文件并增加：
+# server_name narro.tech www.narro.tech narro.ai www.narro.ai;

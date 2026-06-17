@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cbd5e1"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <rect x="0" y="420" width="800" height="180" fill="#86efac" opacity="0.5"/>
+  <ellipse cx="400" cy="120" rx="180" ry="60" fill="#64748b"/>
+  <ellipse cx="300" cy="100" rx="100" ry="45" fill="#64748b"/>
+  <ellipse cx="500" cy="105" rx="110" ry="50" fill="#64748b"/>
+  <line x1="60" y1="180" x2="52" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="95" y1="180" x2="87" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="130" y1="180" x2="122" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="165" y1="180" x2="157" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="200" y1="180" x2="192" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="235" y1="180" x2="227" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="270" y1="180" x2="262" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="305" y1="180" x2="297" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="340" y1="180" x2="332" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="375" y1="180" x2="367" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="410" y1="180" x2="402" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="445" y1="180" x2="437" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="480" y1="180" x2="472" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="515" y1="180" x2="507" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="550" y1="180" x2="542" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="585" y1="180" x2="577" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="620" y1="180" x2="612" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="655" y1="180" x2="647" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="690" y1="180" x2="682" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+  <line x1="725" y1="180" x2="717" y2="400" stroke="#60a5fa" stroke-width="2" opacity="0.5"/>
+</svg>

@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "note": "图卡来自 MAIN_pictures_Standard.pdf（猫/狗/鸟/羊各一页）。重新导入：python scripts/import_main_pictures.py",
+  "stories": {
+    "cat": {
+      "label": "小猫与蝴蝶",
+      "task_type": "Retelling",
+      "task_label": "复述",
+      "instruction": "请按顺序看完全部图片，再让孩子完整讲出故事。",
+      "panels": [
+        { "id": 1, "image": "/static/stories/cat/panel-01.jpg", "caption": "小猫在草地上，看见一只黄蝴蝶。" },
+        { "id": 2, "image": "/static/stories/cat/panel-02.jpg", "caption": "小猫去追蝴蝶，跳起来想抓住它。" },
+        { "id": 3, "image": "/static/stories/cat/panel-03.jpg", "caption": "小猫没抓到，蝴蝶飞走了，小猫很难过。" },
+        { "id": 4, "image": "/static/stories/cat/panel-04.jpg", "caption": "一个小男孩在附近玩球。" },
+        { "id": 5, "image": "/static/stories/cat/panel-05.jpg", "caption": "男孩把球拿回来了；小猫看见桶里有鱼。" },
+        { "id": 6, "image": "/static/stories/cat/panel-06.jpg", "caption": "小猫得到了鱼，很开心。" }
+      ]
+    },
+    "dog": {
+      "label": "小狗与香肠",
+      "task_type": "Retelling",
+      "task_label": "复述",
+      "instruction": "请按顺序看完全部图片，再让孩子完整讲出故事。",
+      "panels": [
+        { "id": 1, "image": "/static/stories/dog/panel-01.jpg", "caption": "小狗看见一只老鼠。" },
+        { "id": 2, "image": "/static/stories/dog/panel-02.jpg", "caption": "小狗追老鼠，但没有抓住。" },
+        { "id": 3, "image": "/static/stories/dog/panel-03.jpg", "caption": "男孩的气球飞走了。" },
+        { "id": 4, "image": "/static/stories/dog/panel-04.jpg", "caption": "男孩把气球拿了回来。" },
+        { "id": 5, "image": "/static/stories/dog/panel-05.jpg", "caption": "小狗看见香肠，很想吃。" },
+        { "id": 6, "image": "/static/stories/dog/panel-06.jpg", "caption": "小狗吃到了香肠，很高兴。" }
+      ]
+    },
+    "bird": {
+      "label": "小鸟一家",
+      "task_type": "Telling",
+      "task_label": "讲述",
+      "instruction": "请按顺序看完全部图片，再让孩子完整讲出故事。",
+      "panels": [
+        { "id": 1, "image": "/static/stories/bird/panel-01.jpg", "caption": "鸟妈妈给小鸟找虫子吃。" },
+        { "id": 2, "image": "/static/stories/bird/panel-02.jpg", "caption": "鸟妈妈喂小鸟，小鸟很开心。" },
+        { "id": 3, "image": "/static/stories/bird/panel-03.jpg", "caption": "小猫来抓小鸟。" },
+        { "id": 4, "image": "/static/stories/bird/panel-04.jpg", "caption": "小狗冲过来，救下了小鸟。" },
+        { "id": 5, "image": "/static/stories/bird/panel-05.jpg", "caption": "鸟妈妈、小鸟和小狗都很高兴。" },
+        { "id": 6, "image": "/static/stories/bird/panel-06.jpg", "caption": "（请根据画面讲述结局）" }
+      ]
+    },
+    "goat": {
+      "label": "小羊与狐狸",
+      "task_type": "Telling",
+      "task_label": "讲述",
+      "instruction": "请按顺序看完全部图片，再让孩子完整讲出故事。",
+      "panels": [
+        { "id": 1, "image": "/static/stories/goat/panel-01.jpg", "caption": "羊妈妈和小羊在草地上。" },
+        { "id": 2, "image": "/static/stories/goat/panel-02.jpg", "caption": "小羊遇到危险，羊妈妈来救它。" },
+        { "id": 3, "image": "/static/stories/goat/panel-03.jpg", "caption": "狐狸来抓小羊。" },
+        { "id": 4, "image": "/static/stories/goat/panel-04.jpg", "caption": "小鸟飞下来，赶走了狐狸。" },
+        { "id": 5, "image": "/static/stories/goat/panel-05.jpg", "caption": "小羊得救了，羊妈妈很开心。" },
+        { "id": 6, "image": "/static/stories/goat/panel-06.jpg", "caption": "（请根据画面讲述结局）" }
+      ]
+    }
+  }
+}

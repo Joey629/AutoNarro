@@ -1,0 +1,46 @@
+{
+  "test_loss": 0.054278913885354996,
+  "test_metrics_raw": {
+    "test_loss": 0.054278913885354996,
+    "test_structured_f1": 0.6885536823425022,
+    "test_structured_precision": 0.6940966010733453,
+    "test_structured_recall": 0.6830985915492958,
+    "test_structured_cat_acc": 84.9015317286652,
+    "test_runtime": 15.3765,
+    "test_samples_per_second": 7.414,
+    "test_steps_per_second": 0.976,
+    "epoch": 30.0
+  },
+  "n_test": 114,
+  "seed": 42,
+  "model_dir": "/Users/yxing/Desktop/AutoNarro/models/bart_narro_v4",
+  "artifacts": {
+    "word_level_csv": "bart_test_ist_word_counts.csv",
+    "narrative_level_csv": "bart_test_ist_strings.csv",
+    "metrics_json": "bart_test_metrics.json"
+  },
+  "timestamp": "2026-05-27T12:33:53",
+  "word_level_ist_metrics": {
+    "tp": 315,
+    "fp": 154,
+    "fn": 167,
+    "word_matched_mass_w_tp": 384,
+    "precision": 0.6716417910447762,
+    "recall": 0.6535269709543569,
+    "f1": 0.6624605678233438,
+    "category_assignment_accuracy_pct": 82.03125
+  },
+  "word_level_ist_metrics_note": "词项=(ist_category, word)，按叙事内 min(专家次数,预测次数) 累计 TP；预测侧次数仅来自 BART 原始串 parse（与验证集 structured_f1 口径一致），不含 Jieba 叙述词频回填；类别分配准确率=TP/W_TP。",
+  "paper_word_metrics_source": "trainer_evaluate_test",
+  "word_level_ist_metrics_trainer_test": {
+    "precision": 0.6940966010733453,
+    "recall": 0.6830985915492958,
+    "f1": 0.6885536823425022,
+    "category_assignment_accuracy_pct": 84.9015317286652
+  },
+  "training_epoch_20": {
+    "train_loss": 0.0602,
+    "eval_loss": 0.06691234558820724
+  },
+  "paper_summary_zh": "在预留数据集上，词元级精确率达到 0.6941，召回率达到 0.6831，F1 值达到 0.6886。正确识别的词元中，类别分配准确率为 84.90%。预留测试损失为 0.054279（第 20 个训练轮的训练损失为 0.0602，验证损失为 0.0669）。"
+}

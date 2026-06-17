@@ -3,6 +3,9 @@
 venv/
 env/
 
+# --- Frontend build ---
+frontend/node_modules/
+
 # --- Python ---
 __pycache__/
 *.py[cod]
@@ -13,10 +16,15 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# --- Secrets ---
+.env
+configs/llm_config.json
+
 # --- Participant data & outputs (do not publish) ---
 narratives.csv
 new_data.csv
 batch_predictions_summary.csv
+data/evaluations.db
 **/predictions_with_metadata*.csv
 
 # Optional: ignore all CSV under project root (uncomment if you want zero CSV in repo)
@@ -24,6 +32,11 @@ batch_predictions_summary.csv
 # !sample_new_data_template.csv
 
 # --- Large model artifacts (use Git LFS or release uploads) ---
+models/pretrained/
+models/bart_narro_v4/pytorch_model.bin
+models/bart_narro_v4/model.safetensors
+models/macro_xgb_narro_v4/*.json
+models/macro_xgb_narro_v4/*.ubj
 *.pth
 *.pt
 *.bin
@@ -31,20 +44,46 @@ batch_predictions_summary.csv
 *.pkl
 *.npy
 *.safetensors
-model_b_bart_structured_generator/
-model_b_bart_structured_generator_output/
-automated_champion_models/
+# 旧版/实验产物（本地若仍存在可忽略）
+BART_structured_generator*/
+model_b_bart_structured_generator*/
+automated_champion_models*/
 champion_models*/
 best_model_*/
+M4_deberta*.pth
+M4_final*.pth
+micro_narro_v4_cv_fold_*.pth
+micro_m4_narro_v4_cv_fold_*.pth
+models/bart_*_output/
+models/BART_*_output/
+configs/ablation_*.json
 analysis_results*/
 batch_reports/
 【Archived】*/
 
-# --- Run outputs / error dumps (may contain study-related rows) ---
-error_analysis_*/
-regression_error_analysis_*/
-regression_results_*/
-deep_analysis_results*/
+# --- Logs ---
+data/logs/*.log
+
+# --- 离线分析输出（可能含研究数据行）---
+analyze_micro_errors/
+analyze_micro_metadata/
+analyze_macro_errors/
+analyze_macro_metadata/
+analyze_multitask_errors/
+analyze_regression_errors/
+analyze_regression_metadata/
+analyze-micro_*/
+anaylyze-regression_*/
+macro_multitask_*/
+macro_performance_m4_*/
+regression_errors_m4_*/
+regression_metadata_m4_*/
+pth.v2/
+pth.v3/
+outputs/
+数据样本/
+features_cache_full.joblib
+regression_macro_split_seed42.npz
 
 # --- Jupyter ---
 .ipynb_checkpoints/

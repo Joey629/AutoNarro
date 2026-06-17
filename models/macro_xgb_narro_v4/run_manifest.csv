@@ -1,0 +1,2 @@
+script,micro_checkpoint,split_cache,automated_linguistic_columns,use_micro_prob,micro_ist_sep
+train_macro_xgb,models/micro_narro_v4.pth,data/regression_macro_split_narro_v4_701020_seed42.npz,"auto_TNU,auto_MLU,auto_TNW,auto_TDW,auto_IS_Per_count,auto_IS_Phy_count,auto_IS_Con_count,auto_IS_Emo_count,auto_IS_Men_count,auto_IS_Ling_count",False,</s>

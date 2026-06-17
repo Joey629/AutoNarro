@@ -1,0 +1,20 @@
+{
+  "pet_name": "Naro",
+  "warmup_greet": "嗨，我是 Naro！准备好就跟我说一声吧。",
+  "warmup_reply": "太好了！那我们开始看图片，你来讲给我听，好吗？",
+  "warmup_to_story": "好，那我们来看第一张图吧！",
+  "panel_greet_first": "看这张图，你看到什么就讲给我听吧。",
+  "panel_greet_next": "好，看下一张。你看到什么？",
+  "panel_greet_last": "最后一张啦，讲完真棒，请家长点「开始评估」。",
+  "intro": "嗨，我是 Naro！你看着图片讲，我只听，不会告诉你图里有什么哦。",
+  "panel_open": "第 {panel} 张图啦，你看到什么就讲给我听吧。",
+  "panel_ask": "还能再讲一点吗？",
+  "panel_followup": "嗯嗯，还有呢？",
+  "panel_transition": "好，我们看下一张。",
+  "panel_tap": "你可以讲讲这张图吗？",
+  "peek_wake": "我在呢！",
+  "finish": "讲完啦，真棒！请家长点「开始评估」。",
+  "encourage": ["嗯嗯，我在听。", "好呀，接着说。", "哇，然后呢？", "还有吗？"],
+  "listen_nudge": "我没太听清，你对着麦克风再说一次好吗？",
+  "warmup_nudge": "嗨，你在吗？跟我说句话吧，我们就开始啦。"
+}

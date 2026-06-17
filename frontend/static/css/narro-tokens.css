@@ -1,0 +1,36 @@
+/**
+ * Narro 品牌 token（方案 1：青绿 / 鼠尾草）
+ * 官网与工作台共用
+ */
+:root {
+  --an-bg: #fafafa;
+  --an-bg-solid: #ffffff;
+  --an-bg-muted: #f0fdfa;
+  --an-bg-subtle: #f8fafc;
+  --an-bg-elevated: rgba(255, 255, 255, 0.78);
+  --an-bg-card: rgba(255, 255, 255, 0.88);
+  --an-bg-hover: #f4f4f5;
+
+  --an-text: #18181b;
+  --an-text-secondary: #52525b;
+  --an-text-muted: #71717a;
+
+  --an-border: rgba(24, 24, 27, 0.08);
+  --an-border-strong: rgba(24, 24, 27, 0.14);
+
+  --an-teal-400: #2dd4bf;
+  --an-teal-500: #14b8a6;
+  --an-teal-600: #0d9488;
+  --an-teal-700: #0f766e;
+
+  --an-accent: var(--an-teal-600);
+  --an-accent-hover: var(--an-teal-700);
+  --an-accent-light: var(--an-teal-500);
+  --an-accent-soft: rgba(13, 148, 136, 0.1);
+  --an-accent-glow: rgba(20, 184, 166, 0.28);
+
+  --an-radius: 12px;
+  --an-radius-lg: 20px;
+  --an-radius-pill: 9999px;
+  --an-font: "Inter", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+}

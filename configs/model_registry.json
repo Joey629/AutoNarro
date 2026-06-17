@@ -1,0 +1,15 @@
+{
+  "active_version": "narro_v4",
+  "versions": {
+    "narro_v4": {
+      "label": "BART 线索 + QiDeBERTa 宏观 SS + XGB 宏观 SC",
+      "micro_weights": "models/micro_narro_v4.pth",
+      "encoder_model": "Morton-Li/QiDeBERTa-base",
+      "micro_config": "configs/micro_narro_v4.json",
+      "bart_dir": "models/bart_narro_v4",
+      "macro_xgb_dir": "models/macro_xgb_narro_v4",
+      "macro_sc_main_dir": "models/macro_sc_main",
+      "macro_sc_direct_dir": "models/macro_sc_direct"
+    }
+  }
+}

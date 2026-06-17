@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "min_evaluations": 2,
+  "max_evaluations_in_context": 8,
+  "page_count": { "min": 4, "max": 6 },
+  "llm": {
+    "max_tokens": 2048,
+    "temperature": 0.55
+  },
+  "ss_labels": {
+    "A2": "故事背景/场景",
+    "A3": "主要角色",
+    "A4": "角色内在状态",
+    "A5": "故事开端事件",
+    "A6": "角色情绪反应",
+    "A7": "故事后果",
+    "A8": "时间顺序",
+    "A9": "空间顺序",
+    "A10": "对话",
+    "A11": "他人情绪反应",
+    "A12": "故事结局",
+    "A13": "因果联系",
+    "A14": "人物计划",
+    "A15": "人物欲望",
+    "A16": "故事主题"
+  },
+  "allowed_scene_keys": [
+    "dawn_hill",
+    "sunny_park",
+    "rain_cloud",
+    "rainbow_path",
+    "garden_pot",
+    "sprout_grow",
+    "moon_lake",
+    "friends_play",
+    "small_problem",
+    "kind_help",
+    "joyful_end",
+    "cozy_home"
+  ],
+  "image_note": "插画为程序生成的场景图（非 DeepSeek 文生图）。DeepSeek API 仅用于故事文本与分镜。"
+}

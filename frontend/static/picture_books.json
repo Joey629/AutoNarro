@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "note": "绘本学习专用，与 configs/story_stimuli.json（讲故事测评图卡）无关",
+  "catalog_order": ["star-path", "rain-umbrella", "seed-sprout", "moon-boat"],
+  "books": {
+    "star-path": {
+      "label": "小星星回家",
+      "subtitle": "睡前 · 5 页",
+      "tags": ["睡前", "情绪"],
+      "age_hint": "3–6 岁",
+      "panels": [
+        { "id": 1, "image": "/static/picturebooks/star-path/01.svg", "caption": "夜深了，小星星露露在天上眨眼睛，可她找不到回家的路。" },
+        { "id": 2, "image": "/static/picturebooks/star-path/02.svg", "caption": "月亮婆婆笑着说：「顺着银河流呀，你会看见一盏小灯笼。」" },
+        { "id": 3, "image": "/static/picturebooks/star-path/03.svg", "caption": "露露飞过安静的屋顶，听见窗里传来轻轻的鼾声。" },
+        { "id": 4, "image": "/static/picturebooks/star-path/04.svg", "caption": "银河尽头，一排小星星正在等她——那是她的家。" },
+        { "id": 5, "image": "/static/picturebooks/star-path/05.svg", "caption": "露露回到伙伴中间，大家一起闪呀闪，说：「晚安，地球。」" }
+      ]
+    },
+    "rain-umbrella": {
+      "label": "朵朵的彩虹伞",
+      "subtitle": "天气 · 5 页",
+      "tags": ["自然", "友谊"],
+      "age_hint": "3–6 岁",
+      "panels": [
+        { "id": 1, "image": "/static/picturebooks/rain-umbrella/01.svg", "caption": "早晨，朵朵打开窗，乌云抱在一起，嘀嗒嘀嗒下雨了。" },
+        { "id": 2, "image": "/static/picturebooks/rain-umbrella/02.svg", "caption": "妈妈给她一把红色的小伞，朵朵说：「我要去接蜗牛先生。」" },
+        { "id": 3, "image": "/static/picturebooks/rain-umbrella/03.svg", "caption": "水洼里映出彩虹，蜗牛慢慢爬过来，躲进伞下的干草地。" },
+        { "id": 4, "image": "/static/picturebooks/rain-umbrella/04.svg", "caption": "雨停了，太阳露出笑脸，伞上的水珠亮晶晶的。" },
+        { "id": 5, "image": "/static/picturebooks/rain-umbrella/05.svg", "caption": "朵朵和蜗牛坐在门口，看着彩虹变淡，心里暖暖的。" }
+      ]
+    },
+    "seed-sprout": {
+      "label": "豆豆发芽啦",
+      "subtitle": "成长 · 5 页",
+      "tags": ["自然", "成长"],
+      "age_hint": "4–6 岁",
+      "panels": [
+        { "id": 1, "image": "/static/picturebooks/seed-sprout/01.svg", "caption": "春天，奇奇在花盆里埋下一颗圆滚滚的豆豆。" },
+        { "id": 2, "image": "/static/picturebooks/seed-sprout/02.svg", "caption": "他每天浇水、晒太阳，土里好像有什么在动。" },
+        { "id": 3, "image": "/static/picturebooks/seed-sprout/03.svg", "caption": "嫩绿的小芽顶开泥土，伸出两片害羞的小叶子。" },
+        { "id": 4, "image": "/static/picturebooks/seed-sprout/04.svg", "caption": "芽儿越长越高，还长出一片真叶子，像在向奇奇招手。" },
+        { "id": 5, "image": "/static/picturebooks/seed-sprout/05.svg", "caption": "奇奇说：「谢谢你努力长大。」豆豆在风里轻轻点头。" }
+      ]
+    },
+    "moon-boat": {
+      "label": "月亮小船",
+      "subtitle": "想象 · 5 页",
+      "tags": ["想象", "冒险"],
+      "age_hint": "4–7 岁",
+      "panels": [
+        { "id": 1, "image": "/static/picturebooks/moon-boat/01.svg", "caption": "晚上，安安梦见湖面像镜子，月亮掉进了水里。" },
+        { "id": 2, "image": "/static/picturebooks/moon-boat/02.svg", "caption": "月亮变成一艘银色小船，向安安招了招手。" },
+        { "id": 3, "image": "/static/picturebooks/moon-boat/03.svg", "caption": "安安坐在船里，萤火虫提着灯笼，从芦苇丛飞过。" },
+        { "id": 4, "image": "/static/picturebooks/moon-boat/04.svg", "caption": "他们路过睡莲，听见青蛙打鼓，湖水荡开一圈圈光。" },
+        { "id": 5, "image": "/static/picturebooks/moon-boat/05.svg", "caption": "醒来时天亮了，窗台上有一片月光叶子——是梦送的礼物。" }
+      ]
+    }
+  }
+}

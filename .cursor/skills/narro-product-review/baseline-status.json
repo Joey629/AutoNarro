@@ -1,0 +1,52 @@
+{
+  "version": "2026-05-25",
+  "summary": "Initial baseline after Top-10 implementation pass",
+  "top10": {
+    "1_tenant_and_roles": {
+      "status": "partial",
+      "note": "tenant_id on evaluations; admin uses require_admin_key. Full multi-user IdP not implemented."
+    },
+    "2_inference_lock_and_bart": {
+      "status": "done",
+      "note": "_infer_lock; predict(predicted_ist_words=)"
+    },
+    "3_auth_fail_closed_docker": {
+      "status": "done",
+      "note": "require_api_key; .dockerignore secrets/csv"
+    },
+    "4_xss_escape": {
+      "status": "partial",
+      "note": "narro-ui.js + hot paths; audit remaining innerHTML"
+    },
+    "5_story_instruction_caption": {
+      "status": "done",
+      "note": "visible storyInstruction + storyPanelCaption"
+    },
+    "6_mobile_responsive": {
+      "status": "partial",
+      "note": "sidebar drawer <=767px; further polish possible"
+    },
+    "7_profile_gate_parent_ui": {
+      "status": "done",
+      "note": "ensureProfileBeforeEval; details for pro report"
+    },
+    "8_pytest_ci": {
+      "status": "partial",
+      "note": "tests/test_auth.py, test_evaluation_store.py; CI golden optional"
+    },
+    "9_split_modules": {
+      "status": "partial",
+      "note": "API routers + narro-ui.js + src/inference; app.js still large"
+    },
+    "10_alerts_a11y_loading": {
+      "status": "partial",
+      "note": "openNarroAlert, focus trap, staged loading; some manager paths remain"
+    }
+  },
+  "open_followups": [
+    "Full JWT/session auth and per-user profile rows",
+    "Further split app.js into ES modules",
+    "Expert override merge into displayed scores",
+    "Postgres + persistent batch queue"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "narro-ui",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:workbench && npm run build:site && npm run build:app",
+    "build:workbench": "tailwindcss -i ./styles/globals.css -o ./static/css/workbench.css --minify",
+    "build:app": "cp styles/narro-tokens.css static/css/narro-tokens.css && cp styles/narro.css static/css/narro.css && cp styles/narro-theme-glass-soft.css static/css/narro-theme-glass-soft.css",
+    "build:site": "tailwindcss -i ./styles/globals.css -o ./static/css/app.css --minify",
+    "watch": "tailwindcss -i ./styles/globals.css -o ./static/css/workbench.css --watch",
+    "watch:app": "npm run build:workbench && npm run build:app",
+    "dev": "npm run watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

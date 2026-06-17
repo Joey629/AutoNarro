@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <ellipse cx="400" cy="110" rx="200" ry="55" fill="#64748b"/><line x1="100" y1="170" x2="90" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="140" y1="170" x2="130" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="180" y1="170" x2="170" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="220" y1="170" x2="210" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="260" y1="170" x2="250" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="300" y1="170" x2="290" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="340" y1="170" x2="330" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="380" y1="170" x2="370" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="420" y1="170" x2="410" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="460" y1="170" x2="450" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="500" y1="170" x2="490" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="540" y1="170" x2="530" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="580" y1="170" x2="570" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="620" y1="170" x2="610" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><line x1="660" y1="170" x2="650" y2="420" stroke="#60a5fa" stroke-width="2" opacity="0.55"/><rect x="0" y="460" width="800" height="140" fill="#4ade80" opacity="0.35"/>
+</svg>

@@ -1,0 +1,282 @@
+/**
+ * Narro 测试主题 B：Soft UI Evolution + 选择性毛玻璃（Liquid Glass）
+ * 启用：?theme=glass-soft 或 localStorage narro_theme=glass-soft
+ * 数据密集区保持实心，玻璃仅用于氛围层与关键容器。
+ */
+
+.app-ambient {
+  display: none;
+}
+
+/* --- 玻璃 token（方向 B）--- */
+html.narro-theme-glass-soft {
+  --narro-glass-bg: rgba(255, 255, 255, 0.62);
+  --narro-glass-bg-strong: rgba(255, 255, 255, 0.88);
+  --narro-glass-border: rgba(255, 255, 255, 0.72);
+  --narro-glass-blur: 20px;
+  --narro-glass-saturate: 1.28;
+  --narro-elev-soft:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 28px rgba(13, 148, 136, 0.08);
+  --narro-elev-lift:
+    0 2px 8px rgba(15, 23, 42, 0.06),
+    0 16px 40px rgba(13, 148, 136, 0.1);
+  --workbench-main: 168 42% 97%;
+  --sidebar-background: 0 0% 100%;
+}
+
+/* --- 流动背景（工作台）--- */
+html.narro-theme-glass-soft .app-ambient {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(
+    165deg,
+    #f0fdfa 0%,
+    #ecfeff 32%,
+    #f8fafc 68%,
+    #f0fdfa 100%
+  );
+}
+
+html.narro-theme-glass-soft .app-ambient::before,
+html.narro-theme-glass-soft .app-ambient::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+html.narro-theme-glass-soft .app-ambient::before {
+  width: min(55vw, 26rem);
+  height: min(55vw, 26rem);
+  left: -6%;
+  top: -8%;
+  background: rgba(45, 212, 191, 0.45);
+  animation: narro-glass-blob-a 22s ease-in-out infinite;
+}
+
+html.narro-theme-glass-soft .app-ambient::after {
+  width: min(48vw, 22rem);
+  height: min(48vw, 22rem);
+  right: -4%;
+  bottom: 10%;
+  background: rgba(13, 148, 136, 0.38);
+  animation: narro-glass-blob-b 26s ease-in-out infinite;
+}
+
+@keyframes narro-glass-blob-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6%, 8%) scale(1.06);
+  }
+}
+
+@keyframes narro-glass-blob-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-8%, -6%) scale(1.05);
+  }
+}
+
+html.narro-theme-glass-soft .app-shell {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+/* --- 侧栏：轻玻璃 --- */
+html.narro-theme-glass-soft .app-sidebar {
+  background: var(--narro-glass-bg);
+  backdrop-filter: blur(var(--narro-glass-blur)) saturate(var(--narro-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--narro-glass-blur)) saturate(var(--narro-glass-saturate));
+  border-right-color: rgba(13, 148, 136, 0.1);
+  box-shadow: 4px 0 24px rgba(13, 148, 136, 0.04);
+}
+
+html.narro-theme-glass-soft .app-main,
+html.narro-theme-glass-soft .app-page-head,
+html.narro-theme-glass-soft .app-main-panels {
+  background-color: transparent;
+  background-image: none;
+}
+
+html.narro-theme-glass-soft .app-page-head {
+  border-bottom-color: rgba(13, 148, 136, 0.08);
+  backdrop-filter: blur(12px) saturate(1.15);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+}
+
+/* --- 卡片：Soft UI + 选择性玻璃 --- */
+html.narro-theme-glass-soft .card {
+  background: var(--narro-glass-bg-strong);
+  border-color: var(--narro-glass-border);
+  box-shadow: var(--narro-elev-soft);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+html.narro-theme-glass-soft .card:hover {
+  box-shadow: var(--narro-elev-lift);
+}
+
+/* 分数/报告：实心可读 */
+html.narro-theme-glass-soft .record-report-header,
+html.narro-theme-glass-soft .record-full-report-inner,
+html.narro-theme-glass-soft .table-ui,
+html.narro-theme-glass-soft .record-pre {
+  background: var(--narro-glass-bg-strong);
+}
+
+/* --- 讲述页：图卡玻璃框 + 实心 dock --- */
+html.narro-theme-glass-soft .story-nav-btn {
+  background: var(--narro-glass-bg-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(13, 148, 136, 0.12);
+  box-shadow: var(--narro-elev-soft);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+html.narro-theme-glass-soft .story-nav-btn:hover:not(:disabled) {
+  transform: scale(1.04);
+  box-shadow: var(--narro-elev-lift);
+}
+
+html.narro-theme-glass-soft .story-toggle {
+  background: var(--narro-glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: rgba(13, 148, 136, 0.12);
+  box-shadow: var(--narro-elev-soft);
+}
+
+html.narro-theme-glass-soft .story-toggle-btn.active {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 10px rgba(13, 148, 136, 0.12);
+}
+
+html.narro-theme-glass-soft .gemini-composer,
+html.narro-theme-glass-soft .story-transcript-panel {
+  background: var(--narro-glass-bg-strong);
+  border-color: rgba(13, 148, 136, 0.14);
+  box-shadow: var(--narro-elev-lift);
+}
+
+/* --- 按钮：Soft 按压 --- */
+html.narro-theme-glass-soft .btn-primary {
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+html.narro-theme-glass-soft .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(13, 148, 136, 0.32);
+}
+
+html.narro-theme-glass-soft .btn-primary:active {
+  transform: translateY(0);
+}
+
+/* --- 对话抽屉 / Modal --- */
+html.narro-theme-glass-soft .narro-chat-rail-inner {
+  background: var(--narro-glass-bg);
+  backdrop-filter: blur(var(--narro-glass-blur)) saturate(var(--narro-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--narro-glass-blur)) saturate(var(--narro-glass-saturate));
+  border-left-color: rgba(13, 148, 136, 0.1);
+}
+
+html.narro-theme-glass-soft .narro-chat-bar {
+  background: var(--narro-glass-bg-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--narro-elev-soft);
+}
+
+html.narro-theme-glass-soft .narro-dialog {
+  background: var(--narro-glass-bg-strong);
+  backdrop-filter: blur(var(--narro-glass-blur)) saturate(var(--narro-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--narro-glass-blur)) saturate(var(--narro-glass-saturate));
+  border: 1px solid var(--narro-glass-border);
+  box-shadow: var(--narro-elev-lift);
+}
+
+html.narro-theme-glass-soft #loadingOverlay {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* --- 登录页：与主题统一 --- */
+html.narro-theme-glass-soft .auth-gate-card {
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: var(--narro-elev-lift);
+}
+
+/* --- 预览条 --- */
+.narro-theme-preview-bar {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  z-index: 100;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #0f766e;
+  background: var(--narro-glass-bg-strong, rgba(255, 255, 255, 0.92));
+  border: 1px solid rgba(13, 148, 136, 0.2);
+  box-shadow: var(--narro-elev-lift, 0 8px 32px rgba(13, 148, 136, 0.15));
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+
+html.narro-theme-glass-soft .narro-theme-preview-bar {
+  display: flex;
+}
+
+.narro-theme-preview-bar button {
+  border: none;
+  border-radius: 9999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(13, 148, 136, 0.12);
+  color: #0f766e;
+  transition: background 0.15s ease;
+}
+
+.narro-theme-preview-bar button:hover {
+  background: rgba(13, 148, 136, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.narro-theme-glass-soft .app-ambient::before,
+  html.narro-theme-glass-soft .app-ambient::after {
+    animation: none;
+  }
+  html.narro-theme-glass-soft .btn-primary:hover,
+  html.narro-theme-glass-soft .story-nav-btn:hover:not(:disabled) {
+    transform: none;
+  }
+}

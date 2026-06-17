@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "alerts": [
+    {
+      "id": "low_macro_vs_norm",
+      "label": "宏观 SC（情节完整性）明显偏低",
+      "field": "pred_SC_Sum",
+      "compare": "expert_norm_SC_Sum",
+      "op": "below_ratio",
+      "ratio": 0.75
+    },
+    {
+      "id": "low_micro",
+      "label": "宏观 SS（故事结构）薄弱",
+      "field": "micro_sum",
+      "op": "lte",
+      "value": 5
+    },
+    {
+      "id": "low_tnw_vs_norm",
+      "label": "词汇量显著落后",
+      "field": "TNW",
+      "compare": "expert_norm_TNW",
+      "op": "below_ratio",
+      "ratio": 0.7
+    },
+    {
+      "id": "low_mlu_vs_norm",
+      "label": "句法发展滞后（MLU）",
+      "field": "MLU",
+      "compare": "expert_norm_MLU",
+      "op": "below_ratio",
+      "ratio": 0.75
+    },
+    {
+      "id": "suspected_delay",
+      "label": "疑似语言发育迟缓（综合）",
+      "requires": ["low_macro_vs_norm", "low_micro"]
+    }
+  ]
+}

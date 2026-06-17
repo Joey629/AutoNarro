@@ -1,0 +1,96 @@
+{
+  "description": "POC 黄金样本：有效叙事检查分数区间；拒评样本检查 quality=insufficient 且无 SC。",
+  "tolerance_note": "PYTHONPATH=src python scripts/run_golden_regression.py",
+  "samples": [
+    {
+      "id": "reject_hello",
+      "story_type": "cat",
+      "task_type": "Telling",
+      "age": 5,
+      "left_behind": 0,
+      "text": "你好",
+      "expect": {
+        "quality_status": "insufficient",
+        "pred_SC_Sum": null,
+        "micro_sum": null
+      }
+    },
+    {
+      "id": "reject_too_short",
+      "story_type": "cat",
+      "task_type": "Telling",
+      "age": 5,
+      "left_behind": 0,
+      "text": "小猫。",
+      "expect": {
+        "quality_status": "insufficient",
+        "pred_SC_Sum": null
+      }
+    },
+    {
+      "id": "cat_telling_5",
+      "story_type": "cat",
+      "task_type": "Telling",
+      "age": 5,
+      "left_behind": 0,
+      "text": "小猫想抓蝴蝶。它跳了起来，但是没有抓到。蝴蝶飞走了。小猫很难过，坐在草地上。后来男孩来拿球，小猫又去拿鱼。",
+      "expect": {
+        "quality_status": "sufficient",
+        "pred_SC_Sum": [2.0, 9.0],
+        "micro_sum": [3, 15]
+      }
+    },
+    {
+      "id": "dog_retelling_5",
+      "story_type": "dog",
+      "task_type": "Retelling",
+      "age": 5,
+      "left_behind": 0,
+      "text": "小狗看到老鼠就跑过去。它没抓住老鼠。然后有个男孩的气球飞了，男孩把气球拿回来了。小狗想吃香肠。",
+      "expect": {
+        "quality_status": "sufficient",
+        "pred_SC_Sum": [2.0, 9.0],
+        "micro_sum": [2, 15]
+      }
+    },
+    {
+      "id": "bird_telling_6",
+      "story_type": "bird",
+      "task_type": "Telling",
+      "age": 6,
+      "left_behind": 0,
+      "text": "鸟妈妈给小鸟找虫子吃。小猫来抓小鸟，没抓到。小狗救了小鸟，大家都很高兴。",
+      "expect": {
+        "quality_status": "sufficient",
+        "pred_SC_Sum": [2.0, 9.0],
+        "micro_sum": [2, 15]
+      }
+    },
+    {
+      "id": "goat_retelling_4",
+      "story_type": "goat",
+      "task_type": "Retelling",
+      "age": 4,
+      "left_behind": 1,
+      "text": "羊妈妈救小羊。狐狸来抓小羊。小鸟飞下来救了小羊，羊妈妈很开心。",
+      "expect": {
+        "quality_status": "sufficient",
+        "pred_SC_Sum": [1.5, 9.0],
+        "micro_sum": [2, 15]
+      }
+    },
+    {
+      "id": "cat_short_5",
+      "story_type": "cat",
+      "task_type": "Telling",
+      "age": 5,
+      "left_behind": 0,
+      "text": "小猫追蝴蝶没抓到。男孩拿球。小猫拿鱼很开心。",
+      "expect": {
+        "quality_status": "sufficient",
+        "pred_SC_Sum": [1.0, 8.5],
+        "micro_sum": [1, 14]
+      }
+    }
+  ]
+}

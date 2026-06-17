@@ -1,0 +1,23 @@
+{
+  "id": "narro_v4_bart",
+  "label": "Narro v4 BART（uer 中文底座）",
+  "description": "产品线默认线索生成模型。",
+  "encoder": {
+    "model_name": "uer/bart-base-chinese-cluecorpussmall",
+    "local_path": "models/pretrained/bart-chinese-uer",
+    "download_note": "PYTHONPATH=src python scripts/download_bart_pretrained.py --config configs/bart_narro_v4.json"
+  },
+  "training": {
+    "seed": 42,
+    "epochs": 30,
+    "train_on_all": false,
+    "stratify_col": "story_type"
+  },
+  "data": {
+    "csv": "data/narratives.csv"
+  },
+  "outputs": {
+    "model_dir": "models/bart_narro_v4",
+    "metrics_log": "data/logs/bart_narro_v4_metrics.json"
+  }
+}

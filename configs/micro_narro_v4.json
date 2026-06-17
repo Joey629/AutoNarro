@@ -1,0 +1,38 @@
+{
+  "id": "narro_v4_micro",
+  "label": "宏观 SS：QiDeBERTa-base + LoRA",
+  "description": "基座 Morton-Li/QiDeBERTa-base；在 narratives.csv 上微调。训练设置：epoch 25、LoRA r=16（含 FFN）、warmup、分组学习率。",
+  "encoder": {
+    "model_name": "Morton-Li/QiDeBERTa-base",
+    "local_path": "models/pretrained/qideberta-base",
+    "trust_remote_code": true,
+    "ist_inline_separator": "auto"
+  },
+  "training": {
+    "seed": 42,
+    "n_splits": 5,
+    "epochs": 25,
+    "batch_size": 8,
+    "learning_rate": 2e-05,
+    "patience": 5,
+    "max_length": 512,
+    "split_by_participant": true,
+    "lora": {
+      "r": 16,
+      "alpha": 32,
+      "target_modules": ["query_proj", "key_proj", "value_proj", "dense"]
+    },
+    "optimizer": {
+      "weight_decay": 0.01,
+      "warmup_ratio": 0.1,
+      "head_learning_rate": 0.0001,
+      "lora_learning_rate": 5e-05,
+      "max_grad_norm": 1.0
+    }
+  },
+  "outputs": {
+    "checkpoint": "models/micro_narro_v4.pth",
+    "cv_checkpoint_prefix": "micro_narro_v4_cv_fold_",
+    "metrics_log": "data/logs/micro_narro_v4_metrics.json"
+  }
+}

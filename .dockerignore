@@ -1,0 +1,15 @@
+.venv
+.git
+__pycache__
+*.pyc
+.DS_Store
+.env
+.env.*
+!.env.example
+configs/llm_config.json
+data/evaluations.db
+data/narratives.csv
+data/*.csv
+batch_reports
+*.pth
+!models/README.md

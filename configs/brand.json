@@ -1,0 +1,17 @@
+{
+  "name": "Narro",
+  "domain": "autonarro.com",
+  "domain_alt": "www.autonarro.com",
+  "domain_note": "主域名；SaaS 路径 /app，API /api",
+  "tagline_zh": "儿童叙事，清晰看见成长",
+  "tagline_en": "See every child's story clearly",
+  "description_zh": "Narro 面向 4–6 岁儿童叙事评估：自动分析宏观 SS（故事结构 A2–A16）、宏观 SC（情节完整性）与语言产出，并为教师与家长提供可理解的反馈与 AI 辅导建议。",
+  "colors": {
+    "primary": "#10a37f",
+    "primary_dark": "#0d8a6a",
+    "sidebar": "#171717",
+    "surface": "#ffffff",
+    "muted": "#6b7280"
+  },
+  "disclaimer": "非诊断工具。模型输出与 AI 建议仅供参考，不替代专业评估。"
+}

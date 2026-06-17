@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "description": "叙事输入质量门：未通过则不输出宏观 SC/SS 模型分（POC 自动评估）",
+  "thresholds": {
+    "min_chars": 20,
+    "min_sentences": 2,
+    "min_tnw": 8,
+    "min_tdw": 4
+  },
+  "regression_bounds": {
+    "sc_min": 0.0,
+    "sc_max": 15.0,
+    "very_low_tnw_threshold": 5,
+    "very_low_tnw_cap_sum": 1.0,
+    "low_tnw_threshold": 8,
+    "low_tnw_cap_sum": 3.0
+  },
+  "reject_regex": [
+    "^[\\s\\u3000]*$",
+    "^你好[\\s。！!？?]*$",
+    "^嗨[\\s。！!？?]*$",
+    "^hello[\\s.!?]*$",
+    "^test[\\s.!?]*$",
+    "^测试[\\s。！!？?]*$"
+  ],
+  "messages": {
+    "insufficient_default": "无法评估：讲述过短或未形成完整叙事，请结合图卡完整讲述后再试。",
+    "low_quality_note": "语言产出偏少，宏观复杂度（SC）已按规则上限约束，仅供参考。"
+  }
+}

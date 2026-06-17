@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "title": "家长观察（约 30 秒）",
+  "intro": "请根据孩子平时的讲述表现作答，用于与本次自动评估对照（非诊断）。",
+  "scale_labels": ["从不", "很少", "有时", "经常", "总是"],
+  "questions": [
+    {
+      "id": "q_story_initiative",
+      "text": "孩子愿意主动讲故事或复述经历"
+    },
+    {
+      "id": "q_story_coherent",
+      "text": "孩子能把一件事按顺序讲清楚（有开头、经过、结果）"
+    },
+    {
+      "id": "q_vocab_rich",
+      "text": "孩子讲述时词汇较丰富，会用到连接词（然后、因为等）"
+    },
+    {
+      "id": "q_emotion_detail",
+      "text": "孩子会描述人物感受或故事细节"
+    },
+    {
+      "id": "q_need_prompts",
+      "text": "孩子讲述时经常需要大人反复提醒或追问才能讲下去",
+      "reverse": true
+    }
+  ]
+}
