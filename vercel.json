@@ -3,7 +3,7 @@
   "installCommand": "pip install -r requirements-vercel.txt",
   "buildCommand": "cd frontend && npm ci && npm run build:app",
   "functions": {
-    "backend/api/main.py": {
+    "api/index.py": {
       "maxDuration": 60
     }
   },

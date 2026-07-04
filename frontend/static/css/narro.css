@@ -206,7 +206,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -38%);
+  transform: translate(-50%, -36%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -233,7 +233,7 @@
   display: block;
   width: 100%;
   height: auto;
-  max-height: min(90.625vh, 40.625rem);
+  max-height: min(72.5vh, 32.5rem);
   object-fit: contain;
   filter: drop-shadow(0 4px 10px rgba(45, 28, 70, 0.12));
   user-select: none;
