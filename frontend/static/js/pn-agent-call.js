@@ -41,8 +41,6 @@
     audioChunks: [],
     sessionAudioBlob: null,
     endingCall: false,
-    heroMode: "idle",
-    thinkVideoPrefetched: false,
     lastSpeechAt: 0,
     history: [],
     turnCommitted: "",
@@ -131,7 +129,6 @@
       btn.setAttribute("aria-label", state.inCall ? "挂断通话" : "开始通话");
     }
     document.body.classList.toggle("pn-agent-in-call", state.inCall && state.voiceOn);
-    syncHeroHeroUi();
   }
 
   function clearHintTimer() {
@@ -1145,71 +1142,9 @@
     $("pnAgentHeroVideo")?.pause?.();
   }
 
-  function heroIdleSrc() {
-    return $("pnAgentHeroVideo")?.dataset?.idleSrc || "/static/videos/pn-agent/tongyu-zhice.webm";
-  }
-
-  function heroThinkSrc() {
-    return $("pnAgentHeroVideo")?.dataset?.thinkSrc || "/static/videos/pn-agent/xiaole-think.webm";
-  }
-
-  function syncHeroHeroUi() {
-    const hero = $("pnAgentHero");
-    if (!hero) return;
-    hero.classList.toggle("is-clickable", !state.inCall && state.heroMode !== "thinking");
-    hero.classList.toggle("is-thinking", state.heroMode === "thinking");
-  }
-
-  function setHeroIdle({ autoplay = true } = {}) {
-    const video = $("pnAgentHeroVideo");
-    if (!video) return;
-    state.heroMode = "idle";
-    syncHeroHeroUi();
-    video.onended = null;
-    video.loop = true;
-    if (video.dataset.activeSrc !== "idle") {
-      video.dataset.activeSrc = "idle";
-      video.src = heroIdleSrc();
-    }
-    if (autoplay) playHeroVideo();
-  }
-
-  async function playHeroThinking() {
-    if (state.inCall || state.heroMode === "thinking") return;
-    const video = $("pnAgentHeroVideo");
-    const hero = $("pnAgentHero");
-    if (!video || !hero) return;
-
-    state.heroMode = "thinking";
-    syncHeroHeroUi();
-    video.loop = false;
-    video.dataset.activeSrc = "think";
-    video.src = heroThinkSrc();
-    video.currentTime = 0;
-    video.onended = () => setHeroIdle();
-
-    try {
-      await video.play();
-    } catch {
-      setHeroIdle();
-    }
-  }
-
-  function prefetchHeroThinkVideo() {
-    const src = heroThinkSrc();
-    if (!src || state.thinkVideoPrefetched) return;
-    state.thinkVideoPrefetched = true;
-    const probe = document.createElement("video");
-    probe.preload = "auto";
-    probe.muted = true;
-    probe.src = src;
-    probe.load();
-  }
-
   function onTabShown() {
     void refreshLlmStatus();
-    prefetchHeroThinkVideo();
-    setHeroIdle();
+    playHeroVideo();
   }
 
   function onTabHidden() {
@@ -1221,19 +1156,8 @@
     void toggleCall();
   });
 
-  $("pnAgentHero")?.addEventListener("click", () => {
-    void playHeroThinking();
-  });
-  $("pnAgentHero")?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      void playHeroThinking();
-    }
-  });
-
   if (document.getElementById("panel-pn-agent")?.classList.contains("active")) {
-    prefetchHeroThinkVideo();
-    setHeroIdle();
+    playHeroVideo();
   }
 
   window.NarroPnAgent = {

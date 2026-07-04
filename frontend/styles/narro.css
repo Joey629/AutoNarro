@@ -215,13 +215,6 @@
   pointer-events: none;
   z-index: 1;
 }
-.pn-agent-hero.is-clickable {
-  pointer-events: auto;
-  cursor: pointer;
-}
-.pn-agent-hero.is-thinking {
-  cursor: wait;
-}
 .pn-agent-hero::after {
   content: "";
   position: absolute;
