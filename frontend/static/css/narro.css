@@ -206,14 +206,21 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -54%);
+  transform: translate(-50%, -38%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(88vw, 20rem);
-  max-height: min(58vh, 26rem);
+  width: min(92vw, 31.25rem);
+  max-height: min(90.625vh, 40.625rem);
   pointer-events: none;
   z-index: 1;
+}
+.pn-agent-hero.is-clickable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.pn-agent-hero.is-thinking {
+  cursor: wait;
 }
 .pn-agent-hero::after {
   content: "";
@@ -228,15 +235,19 @@
   filter: blur(2px);
   z-index: -1;
 }
-.pn-agent-mascot {
+.pn-agent-mascot,
+.pn-agent-hero-video {
   display: block;
   width: 100%;
   height: auto;
-  max-height: min(58vh, 26rem);
+  max-height: min(90.625vh, 40.625rem);
   object-fit: contain;
   filter: drop-shadow(0 4px 10px rgba(45, 28, 70, 0.12));
   user-select: none;
   -webkit-user-drag: none;
+}
+.pn-agent-hero-video {
+  background: transparent;
 }
 .pn-agent-call-ui {
   width: min(100%, 22rem);

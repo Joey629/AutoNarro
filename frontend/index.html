@@ -259,15 +259,19 @@
       <div class="app-main-panels" id="tabPanelsRoot">
         <section class="tab-panel only-user pn-agent-panel" id="panel-pn-agent" aria-label="PN agent">
           <div class="pn-agent-stage">
-            <div class="pn-agent-hero" aria-hidden="true">
-              <img
-                class="pn-agent-mascot"
-                src="/static/images/pn-agent/xiaole-mascot.png"
-                alt=""
-                width="614"
-                height="800"
-                decoding="async"
-              />
+            <div class="pn-agent-hero" id="pnAgentHero" role="button" tabindex="0" aria-label="点击让小乐思考">
+              <video
+                class="pn-agent-hero-video"
+                id="pnAgentHeroVideo"
+                src="/static/videos/pn-agent/tongyu-zhice.webm"
+                data-idle-src="/static/videos/pn-agent/tongyu-zhice.webm"
+                data-think-src="/static/videos/pn-agent/xiaole-think.webm"
+                autoplay
+                loop
+                muted
+                playsinline
+                preload="auto"
+              ></video>
             </div>
             <div class="pn-agent-call-ui" id="pnAgentCallUi">
               <p class="pn-agent-call-status sr-only" id="pnAgentCallStatus" aria-live="polite">通话未开始</p>
