@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pip install -r requirements-vercel.txt",
+  "buildCommand": "cd frontend && npm ci && npm run build:app",
+  "functions": {
+    "backend/api/main.py": {
+      "maxDuration": 60
+    }
+  },
+  "excludeFiles": [
+    "models/**",
+    "data/**",
+    "outputs/**",
+    "tests/**",
+    "analyze_*/**",
+    "analyze-*/**",
+    "macro_*/**",
+    "regression_*/**",
+    "pth.v*/**",
+    "【Archived】*/**",
+    "*.pth",
+    "*.pt",
+    "*.bin",
+    "*.safetensors",
+    "*.joblib",
+    "*.npz"
+  ]
+}
