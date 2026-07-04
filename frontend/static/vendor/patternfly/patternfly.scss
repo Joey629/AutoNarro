@@ -1,6 +1,0 @@
-@use './assets/fontawesome/variables' with (
-  $pf-v6-global--disable-fontawesome: false // change to true to omit font-awesome
-);
-@use './patternfly-base';
-@use './components';
-@use './layouts';

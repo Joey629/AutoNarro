@@ -22,7 +22,7 @@ Narro/
 ## 启动 Web
 
 ```bash
-# 构建 UI（官网 site.css；工作台 PatternFly + narro.css，共用 narro-tokens.css 青绿品牌色）
+# 构建 UI（官网 website/css/site.css；工作台 Tailwind workbench.css + narro.css，共用 narro-tokens.css）
 cd frontend && npm install && npm run build && cd ..
 
 source .venv/bin/activate

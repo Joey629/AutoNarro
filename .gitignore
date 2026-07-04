@@ -86,5 +86,18 @@ outputs/
 features_cache_full.joblib
 regression_macro_split_seed42.npz
 
+# --- PN agent 视频处理临时文件 ---
+frontend/static/videos/pn-agent/_*/
+frontend/static/videos/pn-agent/previews/
+frontend/static/videos/pn-agent/*.bak
+frontend/static/videos/pn-agent/green-frame-sample*.png
+frontend/static/videos/pn-agent/sample-*.png
+frontend/static/videos/pn-agent/tongyu-zhice.mp4
+frontend/static/videos/pn-agent/pn-agent-room-idle.mp4
+
+# --- 前端构建产物（源文件在 frontend/styles/）---
+frontend/static/css/app.css
+frontend/static/css/globals.css
+
 # --- Jupyter ---
 .ipynb_checkpoints/
