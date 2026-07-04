@@ -149,3 +149,27 @@ def free_chat(evaluation_row: Optional[dict], user_message: str, history: list[d
             messages.append({"role": role, "content": content})
     messages.append({"role": "user", "content": user_message})
     return chat_completion(messages)
+
+
+PN_AGENT_SYSTEM = (
+    "你是儿童的小伙伴，名字叫「小乐」。详见 pn_agent_story.PN_AGENT_SYSTEM。"
+)
+
+
+def pn_agent_chat(
+    user_message: str,
+    history: list[dict],
+    session: Optional[dict] = None,
+    *,
+    child_name: str = "",
+    child_age: Optional[int] = None,
+) -> tuple[str, dict]:
+    from pn_agent_story import pn_agent_turn
+
+    return pn_agent_turn(
+        user_message,
+        history,
+        session,
+        child_name=child_name,
+        child_age=child_age,
+    )

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="narro-api-base" content="" />
-  <title>工作台 · Narro</title>
+  <title>语核科技.AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -119,6 +119,15 @@
             </svg>
             <span class="sidebar-nav-label">讲故事</span>
             <span class="sidebar-nav-tooltip" role="tooltip">讲故事</span>
+          </button>
+          <button type="button" class="sidebar-nav-item" data-tab="pn-agent" aria-label="PN agent">
+            <svg class="sidebar-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3z"/>
+              <path d="M5 17.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z"/>
+              <path d="M18.5 15.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7.7-1.6z"/>
+            </svg>
+            <span class="sidebar-nav-label">PN agent</span>
+            <span class="sidebar-nav-tooltip" role="tooltip">PN agent</span>
           </button>
           <div class="sidebar-nav-group narro-history-group history-expanded" id="historyNavGroup">
             <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="historyNavToggle" data-tab="history" aria-expanded="true" aria-label="我的记录">
@@ -248,6 +257,44 @@
         </div>
       </header>
       <div class="app-main-panels" id="tabPanelsRoot">
+        <section class="tab-panel only-user pn-agent-panel" id="panel-pn-agent" aria-label="PN agent">
+          <div class="pn-agent-stage">
+            <div class="pn-agent-hero" aria-hidden="true">
+              <img
+                class="pn-agent-mascot"
+                src="/static/images/pn-agent/xiaole-mascot.png"
+                alt=""
+                width="614"
+                height="800"
+                decoding="async"
+              />
+            </div>
+            <div class="pn-agent-call-ui" id="pnAgentCallUi">
+              <p class="pn-agent-call-status sr-only" id="pnAgentCallStatus" aria-live="polite">通话未开始</p>
+              <p class="pn-agent-call-warn hidden" id="pnAgentCallWarn" role="alert"></p>
+              <p class="pn-agent-live-caption hidden" id="pnAgentLiveCaption" aria-live="polite"></p>
+              <div class="pn-agent-toolbar" role="toolbar" aria-label="PN 语音通话控制">
+                <button
+                  type="button"
+                  class="pn-agent-tool-btn pn-agent-call-btn"
+                  id="pnAgentCallBtn"
+                  aria-label="开始通话"
+                  aria-pressed="false"
+                >
+                  <img
+                    class="pn-agent-call-icon"
+                    src="/static/images/pn-agent/phone-call-icon.png"
+                    alt=""
+                    width="512"
+                    height="512"
+                    decoding="async"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="tab-panel active flex-1 w-full min-h-0 only-user" id="panel-session">
           <div id="sessionPage" class="session-page-layout">
 
@@ -257,47 +304,38 @@
               <p class="sr-only" id="storyPrompt"></p>
 
               <div id="storyViewer" class="story-viewer">
-                <div class="naro-mascot-stage hidden" id="naroMascotStage" aria-hidden="true">
-                  <div class="naro-mascot" id="naroMascot" data-state="idle" role="img" aria-label="Naro">
-                    <svg class="naro-mascot-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 112" fill="none" aria-hidden="true">
-                      <defs>
-                        <linearGradient id="naroBodyGrad" x1="50" y1="28" x2="50" y2="92" gradientUnits="userSpaceOnUse">
-                          <stop stop-color="#2EC492"/>
-                          <stop offset="1" stop-color="#0F9B6C"/>
-                        </linearGradient>
-                        <linearGradient id="naroLeafGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop stop-color="#7EE0B3"/>
-                          <stop offset="1" stop-color="#3CB88A"/>
-                        </linearGradient>
-                        <filter id="naroSoftShadow" x="-20%" y="-10%" width="140%" height="130%">
-                          <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#0A7A52" flood-opacity="0.22"/>
-                        </filter>
-                      </defs>
-                      <ellipse class="naro-svg-ground" cx="50" cy="98" rx="26" ry="6" fill="#0A7A52" opacity="0.12"/>
-                      <g class="naro-svg-figure" filter="url(#naroSoftShadow)">
-                        <path class="naro-svg-leaf naro-svg-leaf-l" d="M38 32C32 18 22 14 28 28C30 34 34 36 38 32Z" fill="url(#naroLeafGrad)"/>
-                        <path class="naro-svg-leaf naro-svg-leaf-r" d="M62 32C68 18 78 14 72 28C70 34 66 36 62 32Z" fill="url(#naroLeafGrad)"/>
-                        <ellipse class="naro-svg-body" cx="50" cy="58" rx="34" ry="36" fill="url(#naroBodyGrad)"/>
-                        <ellipse class="naro-svg-blush-l" cx="32" cy="62" rx="6" ry="3.5" fill="#FF9EB5" opacity="0.45"/>
-                        <ellipse class="naro-svg-blush-r" cx="68" cy="62" rx="6" ry="3.5" fill="#FF9EB5" opacity="0.45"/>
-                        <g class="naro-svg-eye naro-svg-eye-l">
-                          <ellipse cx="38" cy="54" rx="9" ry="10" fill="#fff"/>
-                          <circle class="naro-svg-pupil" cx="39" cy="55" r="5" fill="#1A2E28"/>
-                          <circle class="naro-svg-shine" cx="41" cy="52" r="2" fill="#fff" opacity="0.9"/>
-                        </g>
-                        <g class="naro-svg-eye naro-svg-eye-r">
-                          <ellipse cx="62" cy="54" rx="9" ry="10" fill="#fff"/>
-                          <circle class="naro-svg-pupil" cx="61" cy="55" r="5" fill="#1A2E28"/>
-                          <circle class="naro-svg-shine" cx="63" cy="52" r="2" fill="#fff" opacity="0.9"/>
-                        </g>
-                        <path class="naro-svg-mouth-smile" d="M42 68 Q50 76 58 68" stroke="#1A2E28" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-                        <ellipse class="naro-svg-mouth-open" cx="50" cy="70" rx="7" ry="5" fill="#1A2E28"/>
-                      </g>
-                    </svg>
-                  </div>
+                <div class="naro-mascot-stage" id="naroMascotStage">
+                  <button
+                    type="button"
+                    class="naro-mascot xiaole-mascot"
+                    id="naroMascot"
+                    data-companion="sleep"
+                    data-state="idle"
+                    aria-label="叫醒小乐，开始 AI 陪伴"
+                  >
+                    <img
+                      class="naro-mascot-img xiaole-mascot-img xiaole-mode-sleep"
+                      src="/static/images/xiaole/xiaole-sleep.png"
+                      alt=""
+                      width="160"
+                      height="120"
+                      decoding="async"
+                      aria-hidden="true"
+                    />
+                    <img
+                      class="naro-mascot-img xiaole-mascot-img xiaole-mode-listen hidden"
+                      src="/static/images/xiaole/xiaole-listen.png"
+                      alt=""
+                      width="160"
+                      height="200"
+                      decoding="async"
+                      aria-hidden="true"
+                    />
+                    <span class="sr-only" id="naroMascotLabel">小乐睡着了，点击叫醒</span>
+                  </button>
                 </div>
                 <div class="story-warmup-banner hidden" id="storyWarmupBanner" role="status">
-                  <p class="story-warmup-title">先跟 Naro 打个招呼</p>
+                  <p class="story-warmup-title">先跟小乐打个招呼</p>
                   <p class="story-warmup-desc">图卡一直在，说准备好了我们就开始</p>
                 </div>
                 <div class="story-viewer-stage" id="storyViewerStage">
@@ -323,27 +361,13 @@
             <footer id="storyDock" class="story-dock-fixed">
               <div class="story-dock-inner">
                 <form class="story-dock-form" id="storyDockForm" autocomplete="off">
-                  <div id="storyTranscriptWrap" class="story-transcript-panel is-collapsed">
-                    <button
-                      type="button"
-                      class="story-transcript-toggle"
-                      id="storyTranscriptToggle"
-                      aria-expanded="false"
-                      aria-controls="storyTranscriptBody"
-                    >
-                      <span class="story-transcript-toggle-label">讲述实录</span>
-                      <span class="story-transcript-chevron" aria-hidden="true">▾</span>
-                    </button>
-                    <div id="storyTranscriptBody" class="story-transcript-body-wrap">
-                      <textarea
-                        id="storyTranscript"
-                        class="story-transcript-body"
-                        rows="3"
-                        spellcheck="false"
-                        placeholder="开始讲述后，转写会显示在这里"
-                      ></textarea>
-                    </div>
-                  </div>
+                  <textarea
+                    id="storyTranscript"
+                    class="sr-only"
+                    aria-hidden="true"
+                    tabindex="-1"
+                    spellcheck="false"
+                  ></textarea>
 
                   <div class="gemini-composer-wrap story-composer-wrap">
                     <div class="gemini-composer" id="storyComposer">
@@ -379,20 +403,6 @@
                           <span class="story-rec-text" id="storyCallStatus">正在听…</span>
                         </div>
                       </div>
-
-                      <label class="story-naro-switch" id="storyNaroSwitchWrap" for="storyNaroSwitch" title="开启后 Naro 会语音陪伴引导">
-                        <span class="story-naro-switch-label">Naro</span>
-                        <span class="story-naro-switch-track">
-                          <input
-                            type="checkbox"
-                            id="storyNaroSwitch"
-                            class="story-naro-switch-input"
-                            role="switch"
-                            aria-checked="false"
-                          />
-                          <span class="story-naro-switch-thumb" aria-hidden="true"></span>
-                        </span>
-                      </label>
 
                       <button
                         type="button"
@@ -604,6 +614,12 @@
               <section class="record-section record-narrative-section">
                 <h3 class="record-section-title">讲述原文</h3>
                 <p class="record-body-text record-narrative-body" id="historyNarrativeText"></p>
+                <audio
+                  id="historyNarrativeAudio"
+                  class="record-narrative-audio hidden"
+                  controls
+                  preload="metadata"
+                ></audio>
               </section>
 
               <section class="record-section">
@@ -1015,6 +1031,7 @@
   <script src="/static/js/story-coach.js"></script>
   <script src="/static/js/picture-books.js"></script>
   <script src="/static/js/personalized-books.js"></script>
+  <script src="/static/js/pn-agent-call.js"></script>
   <script src="/static/js/app.js"></script>
 </body>
 </html>

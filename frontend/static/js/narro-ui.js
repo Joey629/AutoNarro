@@ -15,6 +15,8 @@
     const key = localStorage.getItem("narro_api_key") || "";
     const h = { "Content-Type": "application/json" };
     if (key) h["X-API-Key"] = key;
+    const session = localStorage.getItem("narro_session_token");
+    if (session) h.Authorization = `Bearer ${session}`;
     return h;
   }
 

@@ -48,6 +48,30 @@ class ChatRequest(BaseModel):
     history: list[dict] = Field(default_factory=list)
 
 
+class PnAgentChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: list[dict] = Field(default_factory=list)
+    session: dict = Field(default_factory=dict)
+    child_name: str = Field(default="", max_length=64)
+    child_age: Optional[int] = Field(default=None, ge=4, le=12)
+
+
+class PnAgentSaveRequest(BaseModel):
+    dialogue_log: list[dict] = Field(default_factory=list)
+    session: dict = Field(default_factory=dict)
+    child_name: str = Field(default="", max_length=64)
+    child_id: str = Field(default="", max_length=64)
+    child_age: Optional[int] = Field(default=None, ge=3, le=12)
+    class_name: str = Field(default="", max_length=64)
+    elapsed_ms: int = Field(default=0, ge=0, le=7_200_000)
+
+
+class PnAgentTtsRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=500)
+    speed_ratio: float = Field(default=1.0, ge=0.5, le=2.0)
+    pitch_ratio: float = Field(default=1.0, ge=0.5, le=2.0)
+
+
 class CoachRequest(BaseModel):
     question: str = ""
 

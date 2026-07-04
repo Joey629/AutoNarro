@@ -9,12 +9,13 @@ from auth import require_access
 from evaluation_store import (
     delete_evaluation,
     get_evaluation,
+    get_narrative_audio_path,
     list_evaluations,
     save_expert_override,
     update_record_label,
 )
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 
 router = APIRouter(tags=["history"])
 
@@ -38,6 +39,25 @@ def history_detail(evaluation_id: int, _: None = Depends(require_access)):
     if not row:
         raise HTTPException(status_code=404, detail="记录不存在")
     return row
+
+
+@router.get("/api/history/{evaluation_id}/narrative-audio")
+def history_narrative_audio(evaluation_id: int, _: None = Depends(require_access)):
+    if not get_evaluation(evaluation_id):
+        raise HTTPException(status_code=404, detail="记录不存在")
+    path = get_narrative_audio_path(evaluation_id)
+    if not path:
+        raise HTTPException(status_code=404, detail="暂无讲述录音")
+    media = "audio/webm"
+    if path.suffix.lower() in {".wav"}:
+        media = "audio/wav"
+    elif path.suffix.lower() in {".m4a", ".mp4"}:
+        media = "audio/mp4"
+    elif path.suffix.lower() in {".ogg"}:
+        media = "audio/ogg"
+    elif path.suffix.lower() in {".mp3"}:
+        media = "audio/mpeg"
+    return FileResponse(path, media_type=media, filename=path.name)
 
 
 def _rename_evaluation(evaluation_id: int, record_label: str) -> dict:

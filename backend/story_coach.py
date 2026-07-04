@@ -35,7 +35,7 @@ def coach_message_script(
     """无 LLM 时的固定话术。"""
     p = _load_prompts()
     if phase == "warmup_greet":
-        return p.get("warmup_greet", "嗨，我是 Naro！准备好一起讲故事了吗？")
+        return p.get("warmup_greet", "嗨！我是小乐！准备好一起讲故事了吗？")
     if phase == "warmup_reply":
         return p.get("warmup_reply", "太好了！那我们开始看图片吧。")
     if phase == "warmup_to_story":
@@ -44,7 +44,7 @@ def coach_message_script(
         if panel_index == 0:
             return p.get(
                 "panel_greet_first",
-                p.get("intro", "嗨，我是 Naro！看这张图，你看到什么就讲给我听吧。"),
+                p.get("intro", "嗨！我是小乐！看这张图，你看到什么就讲给我听吧。"),
             )
         if panel_total > 0 and panel_index >= panel_total - 1:
             return p.get(
@@ -115,8 +115,8 @@ def coach_message_llm(
         "listen_nudge": "几秒没听到孩子说话：温柔提醒再讲一次或大声一点，不要批评。",
     }.get(phase, f"阶段：{phase}。")
     system = (
-        "你是 Naro，陪 4–8 岁孩子看图讲故事的语音伙伴。语气像耐心的大哥哥/大姐姐："
-        "短句、口语、有语气词（嗯、呀、好），每次 1–2 句，不超过 32 字。\n"
+        "你是小乐，和 4–8 岁孩子差不多大的语音小伙伴。语气像同龄小孩："
+        "短句、口语、自然、好奇，每次 1–2 句，不超过 32 字。\n"
         "硬规则：绝不描述、暗示或提问图片里的具体情节/人物/动物/动作/物体"
         "（禁止：小猫、蝴蝶、跳、树、男孩等画面词）。\n"
         "硬规则：不要诊断、不要分数、不要批评孩子。\n"
@@ -184,7 +184,7 @@ def guide_child(
         )
     return {
         "message": msg,
-        "pet_name": _load_prompts().get("pet_name", "Naro"),
+        "pet_name": _load_prompts().get("pet_name", "小乐"),
         "phase": phase,
         "story_type": story_type,
         "llm_used": llm_used,

@@ -47,6 +47,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE evaluations ADD COLUMN coach_mode TEXT DEFAULT 'free'")
     if "dialogue_log_json" not in cols:
         conn.execute("ALTER TABLE evaluations ADD COLUMN dialogue_log_json TEXT DEFAULT ''")
+    if "narrative_audio_path" not in cols:
+        conn.execute("ALTER TABLE evaluations ADD COLUMN narrative_audio_path TEXT DEFAULT ''")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS expert_overrides (
@@ -128,11 +130,17 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-_STORY_LABELS = {"cat": "小猫", "dog": "小狗", "bird": "小鸟", "goat": "小羊"}
+_STORY_LABELS = {
+    "cat": "小猫",
+    "dog": "小狗",
+    "bird": "小鸟",
+    "goat": "小羊",
+    "pn-agent": "小乐陪伴",
+}
+_PN_SKIP_MESSAGES = frozenset({"__CALL_START__", "__USER_SILENT__"})
 
 
 def _format_record_label(story_type: str, created_at: str, sequence: int) -> str:
-    story = _STORY_LABELS.get(story_type, story_type or "故事")
     date_str = "未知日期"
     if created_at:
         try:
@@ -141,7 +149,33 @@ def _format_record_label(story_type: str, created_at: str, sequence: int) -> str
             date_str = f"{dt.month}月{dt.day}日"
         except ValueError:
             date_str = created_at[:10]
+    if story_type == "pn-agent":
+        return f"第{sequence}次 · 小乐陪伴 · {date_str}"
+    story = _STORY_LABELS.get(story_type, story_type or "故事")
     return f"第{sequence}次 · {story}故事 · {date_str}"
+
+
+def filter_pn_dialogue_log(dialogue_log: Optional[list]) -> list[dict]:
+    out: list[dict] = []
+    for turn in dialogue_log or []:
+        if not isinstance(turn, dict):
+            continue
+        content = (turn.get("content") or "").strip()
+        if not content or content in _PN_SKIP_MESSAGES:
+            continue
+        role = turn.get("role")
+        if role not in ("user", "assistant"):
+            continue
+        out.append({"role": role, "content": content})
+    return out
+
+
+def format_pn_dialogue_transcript(dialogue_log: Optional[list]) -> str:
+    lines: list[str] = []
+    for turn in filter_pn_dialogue_log(dialogue_log):
+        speaker = "小乐" if turn["role"] == "assistant" else "孩子"
+        lines.append(f"{speaker}：{turn['content']}")
+    return "\n".join(lines)
 
 
 def _set_default_record_label(conn: sqlite3.Connection, evaluation_id: int, story_type: str, created_at: str) -> str:
@@ -232,6 +266,71 @@ def save_evaluation(
         )
         eid = int(cur.lastrowid)
         _set_default_record_label(conn, eid, story_type, created_at)
+        return eid
+
+
+def save_pn_agent_session(
+    *,
+    dialogue_log: list,
+    child_id: str = "",
+    child_name: str = "",
+    age: int = 5,
+    class_name: str = "",
+    elapsed_ms: int = 0,
+    session: Optional[dict] = None,
+) -> int:
+    """保存 PN agent（小乐陪伴）语音通话记录。"""
+    from tenant import current_tenant_id
+
+    cleaned = filter_pn_dialogue_log(dialogue_log)
+    if not cleaned:
+        raise ValueError("对话为空，无法保存")
+
+    init_db()
+    created_at = _now_iso()
+    tenant_id = current_tenant_id()
+    transcript = format_pn_dialogue_transcript(cleaned)
+    linguistics = {"pn_agent_session": session or {}}
+    with sqlite3.connect(_db_path()) as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO evaluations (
+                created_at, source, text, story_type, task_type, age, left_behind,
+                predicted_ist_words, report_text, regression_json, microstructure_json,
+                linguistic_json, benchmark_source, elapsed_ms, model_version,
+                child_id, child_name, parent_summary, class_name, tenant_id,
+                status, status_message, coach_mode, dialogue_log_json
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                created_at,
+                "pn-agent",
+                transcript,
+                "pn-agent",
+                "",
+                age,
+                0,
+                "",
+                "",
+                json.dumps({}, ensure_ascii=False),
+                json.dumps({"sum": None, "max": 15, "tasks": []}, ensure_ascii=False),
+                json.dumps(linguistics, ensure_ascii=False),
+                "",
+                max(0, int(elapsed_ms)),
+                "",
+                child_id or "",
+                child_name or "",
+                "与小乐语音陪伴对话记录。",
+                class_name or "",
+                tenant_id,
+                "completed",
+                "",
+                "pn-agent",
+                json.dumps(cleaned, ensure_ascii=False),
+            ),
+        )
+        eid = int(cur.lastrowid)
+        _set_default_record_label(conn, eid, "pn-agent", created_at)
         return eid
 
 
@@ -553,6 +652,79 @@ def list_overrides(evaluation_id: int) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def _narrative_audio_root() -> Path:
+    from paths import DATA_DIR
+
+    root = DATA_DIR / "narrative_audio"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def resolve_narrative_audio_file(stored_path: str) -> Optional[Path]:
+    from paths import DATA_DIR
+
+    raw = (stored_path or "").strip()
+    if not raw:
+        return None
+    p = Path(raw)
+    if not p.is_absolute():
+        p = DATA_DIR / p
+    try:
+        p = p.resolve()
+        root = _narrative_audio_root().resolve()
+        if not str(p).startswith(str(root)):
+            return None
+    except (OSError, ValueError):
+        return None
+    return p if p.is_file() else None
+
+
+def save_narrative_audio(evaluation_id: int, data: bytes, *, suffix: str = ".webm") -> str:
+    from tenant import current_tenant_id
+
+    if not data:
+        raise ValueError("录音为空")
+    init_db()
+    tid = current_tenant_id()
+    if not get_evaluation(evaluation_id):
+        raise LookupError("记录不存在")
+
+    ext = suffix if suffix.startswith(".") else f".{suffix}"
+    dest_dir = _narrative_audio_root() / tid
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / f"{evaluation_id}{ext}"
+    dest.write_bytes(data)
+
+    from paths import DATA_DIR
+
+    rel = str(dest.relative_to(DATA_DIR))
+    with sqlite3.connect(_db_path()) as conn:
+        conn.execute(
+            """
+            UPDATE evaluations SET narrative_audio_path = ?
+            WHERE id = ? AND tenant_id = ?
+            """,
+            (rel, evaluation_id, tid),
+        )
+    return rel
+
+
+def get_narrative_audio_path(evaluation_id: int) -> Optional[Path]:
+    from tenant import current_tenant_id
+
+    init_db()
+    tid = current_tenant_id()
+    with sqlite3.connect(_db_path()) as conn:
+        row = conn.execute(
+            "SELECT narrative_audio_path FROM evaluations WHERE id = ? AND tenant_id = ?",
+            (evaluation_id, tid),
+        ).fetchone()
+    if not row:
+        return None
+    stored = row[0] if isinstance(row, tuple) else row["narrative_audio_path"]
+    return resolve_narrative_audio_file(stored or "")
+
+
 def get_evaluation(evaluation_id: int) -> Optional[dict]:
     from tenant import current_tenant_id
 
@@ -605,6 +777,14 @@ def get_evaluation(evaluation_id: int) -> Optional[dict]:
         "parent_survey": json.loads(row["parent_survey_json"] or "{}")
         if "parent_survey_json" in row.keys() and (row["parent_survey_json"] or "").strip()
         else None,
+        "narrative_audio_path": row["narrative_audio_path"]
+        if "narrative_audio_path" in row.keys()
+        else "",
+        "has_narrative_audio": bool(
+            resolve_narrative_audio_file(
+                row["narrative_audio_path"] if "narrative_audio_path" in row.keys() else ""
+            )
+        ),
         "expert_overrides": list_overrides(evaluation_id),
     }
 

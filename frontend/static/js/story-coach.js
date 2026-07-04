@@ -87,12 +87,16 @@
     mascot.dataset.state = allowed.includes(mode) ? mode : "idle";
   }
 
+  function setCompanionVisual(mode) {
+    window.__narroSetXiaoleCompanionVisual?.(mode);
+  }
+
   function setMascotVisible(visible) {
-    const stage = $("naroMascotStage");
-    stage?.classList.toggle("hidden", !visible);
-    stage?.setAttribute("aria-hidden", visible ? "false" : "true");
+    const companionOn = window.__narroIsXiaoleCompanionEnabled?.();
+    const mode = visible || companionOn ? "active" : "sleep";
+    setCompanionVisual(mode);
     $("sessionPage")?.classList.toggle("story-naro-guided-active", !!visible);
-    if (!visible) setMascotState("idle");
+    if (!visible) setMascotState(companionOn ? "listening" : "idle");
   }
 
   function setCoachStatus(text) {
@@ -154,17 +158,13 @@
     state.lastNaroSpokeAt = Date.now();
     clearFollowupTimer();
     scheduleListenWatchdog();
-    setCoachStatus(state.warmupAwaitingChild ? "跟 Naro 说句话吧" : "轮到你了，看着图讲");
+    setCoachStatus(state.warmupAwaitingChild ? "跟小乐说句话吧" : "轮到你了，看着图讲");
     setMascotState("listening");
   }
 
   function scheduleListenWatchdog() {
     clearListenWatchdog();
-    if (!state.guidedActive || state.busy || state.naroSpeaking) return;
-    state.listenWatchTimer = setTimeout(() => {
-      state.listenWatchTimer = null;
-      void triggerListenNudge();
-    }, LISTEN_NUDGE_MS);
+    /* 讲故事时关闭自动提示，避免思考中被小乐插话 */
   }
 
   async function triggerListenNudge() {
@@ -265,7 +265,7 @@
       utter.onstart = () => {
         if (gen !== state.speakGeneration) return;
         setNaroSpeaking(true);
-        setCoachStatus("Naro 说话中…");
+        setCoachStatus("小乐说话中…");
       };
       utter.onend = () => resolve();
       utter.onerror = () => resolve();
@@ -303,7 +303,7 @@
   }
 
   async function setPetMessage(text, { thinking = false, speak = true } = {}) {
-    if (thinking) setCoachStatus("Naro 在想…");
+    if (thinking) setCoachStatus("小乐在想…");
     if (!thinking && speak && text) return speakAloud(text);
     return Promise.resolve();
   }
@@ -505,7 +505,7 @@
     clearFollowupTimer();
     clearListenWatchdog();
     clearWarmupFallback();
-    setCoachStatus("Naro 准备中…");
+    setCoachStatus("小乐准备中…");
     void ensureVoices();
     $("storyViewerStage")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     await runWarmup();
@@ -514,10 +514,17 @@
   function endGuidedSession() {
     state.guidedActive = false;
     state.awaitingUserTurn = false;
-    setMascotVisible(false);
     setWarmupBanner(false);
     state.warmupComplete = true;
     state.warmupAwaitingChild = false;
+    $("sessionPage")?.classList.remove("story-naro-guided-active");
+    if (window.__narroIsXiaoleCompanionEnabled?.()) {
+      setCompanionVisual("active");
+      setMascotState("listening");
+    } else {
+      setCompanionVisual("sleep");
+      setMascotState("idle");
+    }
     if (state.idleTimer) clearTimeout(state.idleTimer);
     clearFollowupTimer();
     clearListenWatchdog();
@@ -528,7 +535,12 @@
 
   function setNaroEnabled(enabled) {
     state.interactionMode = enabled ? "guided" : "free";
-    if (!enabled) endGuidedSession();
+    if (enabled) {
+      setCompanionVisual("active");
+      setMascotState("listening");
+    } else {
+      endGuidedSession();
+    }
   }
 
   function setInteractionMode(mode) {
@@ -562,7 +574,7 @@
   function init() {
     state.voiceOn = localStorage.getItem(VOICE_STORAGE_KEY) !== "0";
     void ensureVoices();
-    setNaroEnabled(false);
+    setCompanionVisual("sleep");
     reset();
   }
 

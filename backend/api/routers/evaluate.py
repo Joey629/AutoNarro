@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 from api.schemas import CoachRequest, EvaluateRequest
 from auth import require_access
 from evaluation_service import EvaluationService
-from evaluation_store import get_evaluation, log_request
-from fastapi import APIRouter, Depends, HTTPException
+from evaluation_store import get_evaluation, log_request, save_narrative_audio
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
 router = APIRouter(tags=["evaluate"])
 
@@ -39,6 +41,30 @@ def evaluate(req: EvaluateRequest, _: None = Depends(require_access)):
     except Exception as e:
         log_request("/api/evaluate", "POST", 500, str(e), int((time.time() - t0) * 1000))
         raise HTTPException(status_code=500, detail="评估失败，请稍后重试") from e
+
+
+@router.post("/api/evaluate/{evaluation_id}/narrative-audio")
+async def upload_narrative_audio(
+    evaluation_id: int,
+    audio: UploadFile = File(...),
+    _: None = Depends(require_access),
+):
+    row = get_evaluation(evaluation_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="记录不存在")
+    data = await audio.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="录音为空")
+    suffix = Path(audio.filename or "").suffix or ".webm"
+    try:
+        rel = save_narrative_audio(evaluation_id, data, suffix=suffix)
+        return {"ok": True, "evaluation_id": evaluation_id, "narrative_audio_path": rel}
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail="记录不存在") from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="保存录音失败") from e
 
 
 @router.post("/api/evaluate/{evaluation_id}/coach")

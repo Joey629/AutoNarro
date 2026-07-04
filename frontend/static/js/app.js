@@ -16,7 +16,7 @@ const $ = (id) => document.getElementById(id);
 const PERSONA_KEY = "narro_persona";
 const LAST_EVAL_KEY = "narro_last_evaluation_id";
 
-const STORY_SHORT = { cat: "小猫", dog: "小狗", bird: "小鸟", goat: "小羊" };
+const STORY_SHORT = { cat: "小猫", dog: "小狗", bird: "小鸟", goat: "小羊", "pn-agent": "小乐陪伴" };
 
 let currentEvaluationId = null;
 let lastBatchSummaryCsv = null;
@@ -76,6 +76,7 @@ const SAMPLE = {
 
 const TAB_TITLES = {
   session: ["讲故事", "先看完全部图卡，录下孩子的讲述，完成后到「我的记录」查看报告"],
+  "pn-agent": ["PN agent", ""],
   history: ["我的记录", "查看并回溯历次评估结果"],
   insights: ["洞察", "长期进步追踪 · 关注薄弱项与告警"],
   profile: ["个人信息", "管理看护人与儿童基本信息"],
@@ -105,6 +106,15 @@ function applyPersonaChrome() {
 
 function apiHeaders(extra = {}) {
   const h = { "Content-Type": "application/json", ...extra };
+  const key = localStorage.getItem("narro_api_key");
+  if (key) h["X-API-Key"] = key;
+  const session = localStorage.getItem(SESSION_KEY);
+  if (session) h.Authorization = `Bearer ${session}`;
+  return h;
+}
+
+function apiAuthHeaders(extra = {}) {
+  const h = { ...extra };
   const key = localStorage.getItem("narro_api_key");
   if (key) h["X-API-Key"] = key;
   const session = localStorage.getItem(SESSION_KEY);
@@ -655,6 +665,9 @@ function switchTab(name, { evalId = null } = {}) {
   if (name === "insights") loadInsights();
   if (name === "learning-picturebooks") window.NarroPictureBooks?.onTabShown?.();
   if (name === "learning-courses") window.NarroPersonalizedBooks?.onTabShown?.();
+  if (name === "pn-agent") window.NarroPnAgent?.onTabShown?.();
+  if (prev === "pn-agent" && name !== "pn-agent") window.NarroPnAgent?.onTabHidden?.();
+  document.body.classList.toggle("pn-agent-view-active", name === "pn-agent");
   $("storyCards")?.classList.toggle("hidden", name !== "session");
   if (name === "profile") {
     switchProfileSubTab("account");
@@ -663,6 +676,21 @@ function switchTab(name, { evalId = null } = {}) {
 
   activeTabName = name;
 }
+
+window.NarroPnAgent = {
+  ...(window.NarroPnAgent || {}),
+  afterSessionSaved: async (evaluationId) => {
+    await refreshUserHistoryNav({ highlightEvalId: evaluationId || null });
+    window.NarroUI?.showNarroBanner?.("通话记录已保存", { variant: "success", timeoutMs: 2800 });
+    if (evaluationId && $("panel-history")?.classList.contains("active")) {
+      try {
+        await openEvaluation(evaluationId, { silent: true });
+      } catch {
+        /* 侧边栏已刷新即可 */
+      }
+    }
+  },
+};
 
 let openHistoryKebabId = null;
 
@@ -1164,14 +1192,17 @@ let speechFinalized = "";
 let speechInterim = "";
 let speechLastInterim = "";
 let transcriptUserEdited = false;
-const NARO_AI_ENABLED_KEY = "narro_naro_ai_enabled";
-/** 是否在自由讲述基础上启用 Naro AI 引导 */
-let naroAiEnabled = false;
 /** @type {"immersive-free"|"immersive-guided"|null} */
 let speechMode = null;
 let speechKeepAlive = false;
 let speechSessionBuffer = "";
 let immersiveSessionActive = false;
+let xiaoleCompanionEnabled = false;
+let storyMicStream = null;
+let storyAudioRecorder = null;
+let storyAudioChunks = [];
+let storySessionAudioBlob = null;
+let historyNarrativeAudioUrl = null;
 let selectedStory = "cat";
 let storyPanelIndex = 0;
 let storyStimuliData = null;
@@ -1322,14 +1353,109 @@ window.__narroGetRecentTranscriptTail = (maxLen = 400) => {
 };
 
 async function warmupMicrophone() {
-  if (!navigator.mediaDevices?.getUserMedia) return;
+  await startStoryAudioCapture();
+}
+
+function releaseStoryMicStream() {
+  storyMicStream?.getTracks?.().forEach((t) => t.stop());
+  storyMicStream = null;
+  storyAudioRecorder = null;
+}
+
+async function startStoryAudioCapture() {
+  if (!navigator.mediaDevices?.getUserMedia) return false;
+  if (storyMicStream) return true;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    storyMicStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true },
     });
-    stream.getTracks().forEach((t) => t.stop());
+    storyAudioChunks = [];
+    const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "";
+    storyAudioRecorder = new MediaRecorder(
+      storyMicStream,
+      mime ? { mimeType: mime } : undefined
+    );
+    storyAudioRecorder.ondataavailable = (ev) => {
+      if (ev.data?.size) storyAudioChunks.push(ev.data);
+    };
+    storyAudioRecorder.start(1000);
+    return true;
   } catch {
-    /* STT 会再次请求权限 */
+    releaseStoryMicStream();
+    return false;
+  }
+}
+
+async function stopStoryAudioCapture() {
+  if (!storyAudioRecorder || storyAudioRecorder.state === "inactive") {
+    releaseStoryMicStream();
+    return storySessionAudioBlob;
+  }
+  return new Promise((resolve) => {
+    storyAudioRecorder.onstop = () => {
+      if (storyAudioChunks.length) {
+        storySessionAudioBlob = new Blob(storyAudioChunks, {
+          type: storyAudioRecorder?.mimeType || "audio/webm",
+        });
+      }
+      storyAudioChunks = [];
+      releaseStoryMicStream();
+      resolve(storySessionAudioBlob);
+    };
+    try {
+      storyAudioRecorder.stop();
+    } catch {
+      releaseStoryMicStream();
+      resolve(storySessionAudioBlob);
+    }
+  });
+}
+
+async function uploadNarrativeAudio(evaluationId, blob) {
+  const fd = new FormData();
+  const ext = (blob.type || "").includes("wav") ? "wav" : "webm";
+  fd.append("audio", blob, `narrative_${evaluationId}.${ext}`);
+  const res = await fetch(`${API}/api/evaluate/${evaluationId}/narrative-audio`, {
+    method: "POST",
+    body: fd,
+    headers: apiAuthHeaders(),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || "录音保存失败");
+  return data;
+}
+
+async function paintHistoryNarrativeAudio(row, data) {
+  const audioEl = $("historyNarrativeAudio");
+  if (!audioEl) return;
+  if (historyNarrativeAudioUrl) {
+    URL.revokeObjectURL(historyNarrativeAudioUrl);
+    historyNarrativeAudioUrl = null;
+  }
+  const eid = row?.id || row?.evaluation_id || data?.evaluation_id;
+  if (!row?.has_narrative_audio || !eid) {
+    audioEl.pause?.();
+    audioEl.removeAttribute("src");
+    audioEl.classList.add("hidden");
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/api/history/${eid}/narrative-audio`, {
+      headers: apiAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("no audio");
+    const blob = await res.blob();
+    historyNarrativeAudioUrl = URL.createObjectURL(blob);
+    audioEl.src = historyNarrativeAudioUrl;
+    audioEl.classList.remove("hidden");
+  } catch {
+    audioEl.pause?.();
+    audioEl.removeAttribute("src");
+    audioEl.classList.add("hidden");
   }
 }
 
@@ -1394,54 +1520,54 @@ window.__narroAdvanceStoryPanel = () => {
   }
 };
 
-function loadNaroAiEnabled() {
-  try {
-    return localStorage.getItem(NARO_AI_ENABLED_KEY) === "1";
-  } catch {
-    return false;
+function setXiaoleCompanionVisual(mode) {
+  const mascot = $("naroMascot");
+  if (!mascot) return;
+  const sleep = mode !== "active";
+  mascot.dataset.companion = sleep ? "sleep" : "active";
+  mascot.querySelector(".xiaole-mode-sleep")?.classList.toggle("hidden", !sleep);
+  mascot.querySelector(".xiaole-mode-listen")?.classList.toggle("hidden", sleep);
+  mascot.setAttribute(
+    "aria-label",
+    sleep ? "叫醒小乐，开始 AI 陪伴" : "小乐正在陪伴倾听，点击让小乐休息"
+  );
+  const label = $("naroMascotLabel");
+  if (label) {
+    label.textContent = sleep ? "小乐睡着了，点击叫醒" : "小乐正在倾听，点击让小乐休息";
   }
 }
 
-function saveNaroAiEnabled(enabled) {
-  try {
-    localStorage.setItem(NARO_AI_ENABLED_KEY, enabled ? "1" : "0");
-  } catch {
-    /* ignore */
-  }
+function activateXiaoleCompanion() {
+  xiaoleCompanionEnabled = true;
+  setXiaoleCompanionVisual("active");
+  window.NarroStoryCoach?.setNaroEnabled?.(true);
+  syncStoryComposerHint();
 }
 
-function syncNaroSwitchUi() {
-  const input = $("storyNaroSwitch");
-  const wrap = $("storyNaroSwitchWrap");
-  if (input) {
-    input.checked = naroAiEnabled;
-    input.setAttribute("aria-checked", naroAiEnabled ? "true" : "false");
-    input.disabled = !!immersiveSessionActive;
-  }
-  wrap?.classList.toggle("is-on", naroAiEnabled);
-  wrap?.classList.toggle("is-disabled", !!immersiveSessionActive);
+function deactivateXiaoleCompanion() {
+  xiaoleCompanionEnabled = false;
+  window.NarroStoryCoach?.endGuidedSession?.();
+  window.NarroStoryCoach?.setNaroEnabled?.(false);
+  setXiaoleCompanionVisual("sleep");
+  syncStoryComposerHint();
+}
+
+function onXiaoleMascotClick() {
+  if (immersiveSessionActive) return;
+  if (xiaoleCompanionEnabled) deactivateXiaoleCompanion();
+  else activateXiaoleCompanion();
+}
+
+window.__narroSetXiaoleCompanionVisual = setXiaoleCompanionVisual;
+window.__narroIsXiaoleCompanionEnabled = () => xiaoleCompanionEnabled;
+
+function syncStoryComposerHint() {
   const hint = $("storyComposerHint");
   if (hint && !immersiveSessionActive) {
-    hint.textContent = naroAiEnabled
-      ? "点击麦克风，Naro 会在旁引导"
-      : "点击麦克风开始讲述";
+    hint.textContent = xiaoleCompanionEnabled
+      ? "点击麦克风，小乐会陪你讲故事"
+      : "点击小乐或麦克风开始讲述";
   }
-  window.NarroStoryCoach?.setNaroEnabled?.(naroAiEnabled);
-}
-
-function setNaroAiEnabled(enabled, { persist = true } = {}) {
-  naroAiEnabled = !!enabled;
-  if (persist) saveNaroAiEnabled(naroAiEnabled);
-  syncNaroSwitchUi();
-  updateMicUiIdle();
-}
-
-function setStoryTranscriptExpanded(expanded) {
-  const wrap = $("storyTranscriptWrap");
-  const btn = $("storyTranscriptToggle");
-  if (!wrap || !btn) return;
-  wrap.classList.toggle("is-collapsed", !expanded);
-  btn.setAttribute("aria-expanded", expanded ? "true" : "false");
 }
 
 function syncStoryTranscriptDisplay(interim = null) {
@@ -1475,12 +1601,6 @@ function handleSpeechInterim(interim) {
   if (speechMode === "immersive-guided") {
     window.NarroStoryCoach?.onChildSpeechActivity?.({ interim: interim.trim() });
   }
-}
-
-function toggleStoryTranscriptPanel() {
-  const wrap = $("storyTranscriptWrap");
-  if (!wrap) return;
-  setStoryTranscriptExpanded(wrap.classList.contains("is-collapsed"));
 }
 
 function updateMicUiIdle() {
@@ -1531,13 +1651,11 @@ function handleSpeechFinalSegment(piece) {
 
 function showCallOverlay() {
   immersiveSessionActive = true;
-  syncNaroSwitchUi();
-  setStoryTranscriptExpanded(true);
+  syncStoryComposerHint();
   setSpeechUiRecording(true);
   const status = $("storyCallStatus");
   if (status) {
-    status.textContent =
-      naroAiEnabled ? "Naro 在听…" : "正在听…";
+    status.textContent = xiaoleCompanionEnabled ? "小乐在听…" : "正在听…";
   }
   syncStoryTranscriptDisplay();
 }
@@ -1559,16 +1677,14 @@ function finalizeImmersiveTranscript() {
   syncStoryTranscriptDisplay();
 }
 
-function endImmersiveSession() {
+async function endImmersiveSession() {
   speechKeepAlive = false;
   immersiveSessionActive = false;
   stopSpeechHealthMonitor();
   stopSpeechRecognition();
   hideCallOverlay();
-  syncNaroSwitchUi();
-  if (naroAiEnabled) {
-    window.NarroStoryCoach?.endGuidedSession?.();
-  }
+  syncStoryComposerHint();
+  await stopStoryAudioCapture();
   finalizeImmersiveTranscript();
   setSpeechStatus("");
   updateMicUiIdle();
@@ -1613,7 +1729,7 @@ async function startImmersiveSession() {
     return;
   }
 
-  speechMode = naroAiEnabled ? "immersive-guided" : "immersive-free";
+  speechMode = xiaoleCompanionEnabled ? "immersive-guided" : "immersive-free";
   speechKeepAlive = true;
   speechSessionBuffer = "";
   speechFinalized = "";
@@ -1763,8 +1879,9 @@ function sanitizeReportForDisplay(report, q) {
     .trim();
 }
 
-function clearStoryDock() {
-  endImmersiveSession();
+async function clearStoryDock() {
+  await endImmersiveSession();
+  deactivateXiaoleCompanion();
   if ($("storyTranscript")) $("storyTranscript").value = "";
   speechPrefix = "";
   speechFinalized = "";
@@ -1773,10 +1890,11 @@ function clearStoryDock() {
   transcriptUserEdited = false;
   speechSessionBuffer = "";
   speechMode = null;
+  storySessionAudioBlob = null;
+  storyAudioChunks = [];
   autoResizeStoryInput();
   window.NarroStoryCoach?.reset?.();
-  syncNaroSwitchUi();
-  setStoryTranscriptExpanded(false);
+  syncStoryComposerHint();
 }
 
 function formatScEpisode(v) {
@@ -1931,6 +2049,8 @@ function rowToRenderPayload(row) {
     text: row.text || row.narrative_text || "",
     parent_survey: row.parent_survey || null,
     coach_mode: row.coach_mode || "free",
+    dialogue_log: row.dialogue_log || [],
+    has_narrative_audio: !!row.has_narrative_audio,
   };
 }
 
@@ -2039,12 +2159,89 @@ function storyLabel(storyType) {
   return STORY_SHORT[storyType] || storyType || "—";
 }
 
+function historyStoryPhrase(storyType) {
+  if (storyType === "pn-agent") return "小乐陪伴";
+  return `${storyLabel(storyType)}故事`;
+}
+
+function isPnAgentRecord(row) {
+  return row?.story_type === "pn-agent" || row?.coach_mode === "pn-agent";
+}
+
+function formatPnDialogueLog(dialogueLog) {
+  const skip = new Set(["__CALL_START__", "__USER_SILENT__"]);
+  const lines = [];
+  for (const turn of dialogueLog || []) {
+    const content = String(turn?.content || "").trim();
+    if (!content || skip.has(content)) continue;
+    const speaker = turn?.role === "assistant" ? "小乐" : turn?.role === "user" ? "孩子" : "";
+    if (!speaker) continue;
+    lines.push(`${speaker}：${content}`);
+  }
+  return lines.join("\n");
+}
+
+function setHistoryAssessmentSectionsVisible(visible) {
+  $("historyEvalResults")
+    ?.querySelector(".record-scores")
+    ?.classList.toggle("hidden", !visible);
+  $("historyQualityScoreHint")?.classList.toggle("hidden", !visible);
+  $("historyScBreakdown")?.classList.toggle("hidden", !visible);
+  $("historyParentSummary")
+    ?.closest(".record-section")
+    ?.classList.toggle("hidden", !visible);
+  $("historyEvalResults")
+    ?.querySelector(".grid.gap-3")
+    ?.classList.toggle("hidden", !visible);
+  $("historyEvalResults")
+    ?.querySelector(".record-pro-details")
+    ?.classList.toggle("hidden", !visible);
+  if (!visible) $("historyParentSurveySection")?.classList.add("hidden");
+}
+
+function paintPnAgentHistoryUI(row, data) {
+  $("historyDetailBlock")?.classList.add("record-report--pn-agent");
+  setHistoryAssessmentSectionsVisible(false);
+  const label = (row?.record_label || "").trim();
+  const titleText = label || `小乐陪伴 · ${formatHistoryDateShort(row?.created_at)}`;
+  if ($(REPORT_UI.history.title)) $(REPORT_UI.history.title).textContent = titleText;
+  if ($(REPORT_UI.history.evalId)) {
+    $(REPORT_UI.history.evalId).textContent = String(data.evaluation_id ?? "—");
+  }
+  if ($(REPORT_UI.history.storyLabel)) $(REPORT_UI.history.storyLabel).textContent = "小乐陪伴";
+  const elapsed = row?.elapsed_ms ?? data?.elapsed_ms ?? 0;
+  if ($(REPORT_UI.history.elapsed)) {
+    $(REPORT_UI.history.elapsed).textContent = elapsed ? `${elapsed}ms` : "语音陪伴";
+  }
+  const dialogue =
+    formatPnDialogueLog(row?.dialogue_log) || row?.text || data?.text || "（无对话内容）";
+  const narrEl = $(REPORT_UI.history.narrativeText);
+  if (narrEl) {
+    narrEl.textContent = dialogue;
+    narrEl.classList.add("record-dialogue-transcript");
+  }
+  const narrTitle = narrEl?.closest(".record-section")?.querySelector(".record-section-title");
+  if (narrTitle) narrTitle.textContent = "通话实录";
+  $("historyQualityBanner")?.classList.add("hidden");
+  $("historyEvalProgress")?.classList.add("hidden");
+  void paintHistoryNarrativeAudio(row, data);
+}
+
+function resetPnAgentHistoryUI() {
+  $("historyDetailBlock")?.classList.remove("record-report--pn-agent");
+  setHistoryAssessmentSectionsVisible(true);
+  const narrEl = $(REPORT_UI.history.narrativeText);
+  narrEl?.classList.remove("record-dialogue-transcript");
+  const narrTitle = narrEl?.closest(".record-section")?.querySelector(".record-section-title");
+  if (narrTitle) narrTitle.textContent = "讲述原文";
+}
+
 function formatHistoryNavLabel(r) {
   const custom = (r.record_label || "").trim();
   if (custom) return custom;
-  const story = storyLabel(r.story_type);
+  const story = historyStoryPhrase(r.story_type);
   const date = formatHistoryDateShort(r.created_at);
-  return `${story}故事 · ${date}`;
+  return `${story} · ${date}`;
 }
 
 function formatHistoryDateShort(createdAt) {
@@ -2065,7 +2262,8 @@ function updateHistoryAskNarroBtn() {
     currentPersona === "user" &&
     $("panel-history")?.classList.contains("active") &&
     !$("historyDetailWrap")?.classList.contains("hidden") &&
-    !!currentEvaluationId;
+    !!currentEvaluationId &&
+    !$("historyDetailBlock")?.classList.contains("record-report--pn-agent");
   btn.classList.toggle("hidden", !show);
   if (!show) closeNarroChatDrawer();
 }
@@ -2220,8 +2418,9 @@ function renderHistoryDetail(data, row) {
   selectedHistoryEvalId = data.evaluation_id;
   persistLastEvaluation(data.evaluation_id);
   paintEvaluationUI(data, row, "history");
+  void paintHistoryNarrativeAudio(row, data);
   const st = row?.status || data?.status || "completed";
-  setExportEnabled(st === "completed");
+  setExportEnabled(st === "completed" && !isPnAgentRecord(row));
   if (st === "completed") refreshLlmStatus();
   resetHistoryCoachThread();
 
@@ -2249,11 +2448,13 @@ function renderHistorySidebarNav(items, { selectedId = null } = {}) {
       const active = selectedId != null && String(r.id) === String(selectedId);
       const label =
         (r.record_label || "").trim() ||
-        `第${total - index}次 · ${storyLabel(r.story_type)}故事 · ${formatHistoryDateShort(r.created_at)}`;
+        `第${total - index}次 · ${historyStoryPhrase(r.story_type)} · ${formatHistoryDateShort(r.created_at)}`;
       const hint =
-        r.pred_SC_Sum != null
-          ? `宏观 SC ${Number(r.pred_SC_Sum).toFixed(1)} · SS ${r.micro_sum ?? "—"}/15`
-          : "";
+        r.story_type === "pn-agent"
+          ? "小乐陪伴通话"
+          : r.pred_SC_Sum != null
+            ? `宏观 SC ${Number(r.pred_SC_Sum).toFixed(1)} · SS ${r.micro_sum ?? "—"}/15`
+            : "";
       const tip = hint ? `${label} · ${hint}` : label;
       const pendingTag = isEvaluationInProgress(r.status)
         ? '<span class="sidebar-nav-record-pending">分析中</span>'
@@ -2781,6 +2982,12 @@ function maybePromptParentSurvey(row) {
 
 function paintEvaluationUI(data, row, surface) {
   if (surface === "history") {
+    resetPnAgentHistoryUI();
+    if (isPnAgentRecord(row)) {
+      paintPnAgentHistoryUI(row, data);
+      setExportEnabled(false);
+      return;
+    }
     const blocked = paintHistoryEvalState(row, data);
     const label = (row?.record_label || "").trim();
     const story = storyLabel(row?.story_type || data.story_type);
@@ -2790,9 +2997,10 @@ function paintEvaluationUI(data, row, surface) {
       $(REPORT_UI.history.evalId).textContent = String(data.evaluation_id ?? "—");
     }
     if ($(REPORT_UI.history.storyLabel)) $(REPORT_UI.history.storyLabel).textContent = story;
-    const narr = row?.text || data.text || "";
-    if ($(REPORT_UI.history.narrativeText)) $(REPORT_UI.history.narrativeText).textContent = narr;
-    if (blocked) {
+  const narr = row?.text || data.text || "";
+  if ($(REPORT_UI.history.narrativeText)) $(REPORT_UI.history.narrativeText).textContent = narr;
+  void paintHistoryNarrativeAudio(row, data);
+  if (blocked) {
       setExportEnabled(false);
       if ((row?.status || data?.status) === "failed") {
         paintQualityBanner(
@@ -2928,14 +3136,24 @@ async function runEvaluation() {
     }
 
     if (currentPersona === "user") {
-      clearStoryDock();
+      const audioBlob = storySessionAudioBlob;
+      await clearStoryDock();
       resetSessionAssessmentView();
       currentEvaluationId = eid;
       persistLastEvaluation(eid);
+      if (audioBlob) {
+        try {
+          await uploadNarrativeAudio(eid, audioBlob);
+        } catch (err) {
+          console.warn("narrative audio upload failed", err);
+        }
+      }
       applyHistoryNavExpanded(true);
       await refreshUserHistoryNav({ highlightEvalId: eid });
       switchTab("history", { evalId: eid });
       await openEvaluation(eid, { silent: true });
+      const row = await fetchJson(`/api/history/${eid}`);
+      void paintHistoryNarrativeAudio(row, rowToRenderPayload(row));
       beginEvaluationPolling(eid);
       if ($("panel-insights")?.classList.contains("active")) loadInsights();
       return;
@@ -3107,7 +3325,11 @@ function toggleStoryDockMenu() {
 $("storyDockForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   closeStoryDockMenu();
-  stopSpeechRecognition();
+  if (immersiveSessionActive || speechRec) {
+    await endImmersiveSession();
+  } else {
+    stopSpeechRecognition();
+  }
   const t = ($("storyTranscript")?.value || "").trim();
   if (!t) {
     void openNarroAlert("请先看完图卡，用「开始讲述」录下完整讲述");
@@ -3395,26 +3617,11 @@ $("storyNextBtn")?.addEventListener("click", () => {
   }
 });
 
-$("storyTranscript")?.addEventListener("focus", () => {
-  setStoryTranscriptExpanded(true);
-});
-$("storyTranscript")?.addEventListener("input", () => {
-  transcriptUserEdited = true;
-});
-$("storyTranscript")?.addEventListener("blur", () => {
-  commitTranscriptFromEditor();
-});
-$("storyNaroSwitch")?.addEventListener("change", (e) => {
-  if (immersiveSessionActive) {
-    e.target.checked = naroAiEnabled;
-    return;
-  }
-  setNaroAiEnabled(e.target.checked);
-});
 $("storyMicBtn")?.addEventListener("click", () => void startImmersiveSession());
-$("storyMicStopBtn")?.addEventListener("click", endImmersiveSession);
-$("storyTranscriptToggle")?.addEventListener("click", toggleStoryTranscriptPanel);
-setNaroAiEnabled(loadNaroAiEnabled(), { persist: false });
+$("storyMicStopBtn")?.addEventListener("click", () => void endImmersiveSession());
+$("naroMascot")?.addEventListener("click", onXiaoleMascotClick);
+setXiaoleCompanionVisual("sleep");
+syncStoryComposerHint();
 
 async function loadAdmin() {
   const cls = ($("adminClassFilter")?.value || "").trim();

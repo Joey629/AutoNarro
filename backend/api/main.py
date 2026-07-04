@@ -28,6 +28,7 @@ from api.routers import (
     evaluate,
     history,
     personalized_books,
+    pn_agent,
     profile,
     system,
 )
@@ -109,6 +110,7 @@ app.include_router(profile.router)
 app.include_router(batch.router)
 app.include_router(coach_guide.router)
 app.include_router(personalized_books.router)
+app.include_router(pn_agent.router)
 
 
 def _should_disable_browser_cache(path: str) -> bool:

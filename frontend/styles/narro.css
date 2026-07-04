@@ -24,6 +24,327 @@
   display: none !important;
 }
 
+/* 登录 / 注册门禁 */
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+.auth-gate.hidden {
+  display: none !important;
+}
+.auth-gate-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(145deg, #f0fdfa 0%, #ecfeff 45%, #f8fafc 100%);
+}
+.auth-gate-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.auth-gate-mesh {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(45, 212, 191, 0.25), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgba(13, 148, 136, 0.18), transparent 40%);
+  pointer-events: none;
+}
+.auth-gate-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.auth-gate-blob-1 {
+  width: 18rem;
+  height: 18rem;
+  left: 8%;
+  top: 12%;
+  background: rgba(45, 212, 191, 0.45);
+}
+.auth-gate-blob-2 {
+  width: 16rem;
+  height: 16rem;
+  right: 10%;
+  top: 8%;
+  background: rgba(13, 148, 136, 0.35);
+}
+.auth-gate-blob-3 {
+  width: 20rem;
+  height: 20rem;
+  left: 18%;
+  bottom: 6%;
+  background: rgba(94, 234, 212, 0.35);
+}
+.auth-gate-blob-4 {
+  width: 14rem;
+  height: 14rem;
+  right: 16%;
+  bottom: 14%;
+  background: rgba(15, 118, 110, 0.28);
+}
+.auth-gate-card {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 24rem);
+  padding: 1.75rem 1.5rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background) / 0.94);
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.auth-gate-logo {
+  display: block;
+  margin: 0 auto 0.25rem;
+  height: auto;
+  max-width: 140px;
+}
+.auth-gate-title {
+  margin: 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.auth-gate-sub {
+  margin: 0 0 0.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+.auth-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border-radius: 9999px;
+  background: hsl(var(--muted) / 0.65);
+  border: 1px solid hsl(var(--border));
+}
+.auth-tab {
+  flex: 1;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+.auth-tab.active {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.auth-form.hidden {
+  display: none !important;
+}
+.auth-gate-error {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: hsl(var(--destructive, 0 72% 51%));
+  text-align: center;
+}
+.app-shell--auth-locked {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* PN agent · 全屏背景页 */
+.pn-agent-panel {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding: 0 !important;
+  overflow: hidden;
+  background-color: #e8e0d4;
+  background-image: url("/static/images/pn-agent/room-bg.png");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: auto;
+}
+.pn-agent-panel.active {
+  display: flex !important;
+  flex-direction: column;
+}
+.pn-agent-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 1.25rem 2.5rem;
+  pointer-events: none;
+}
+.pn-agent-hero {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -54%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(88vw, 20rem);
+  max-height: min(58vh, 26rem);
+  pointer-events: none;
+  z-index: 1;
+}
+.pn-agent-hero::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  width: 62%;
+  height: 9%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(38, 22, 52, 0.34) 0%, rgba(38, 22, 52, 0) 72%);
+  filter: blur(2px);
+  z-index: -1;
+}
+.pn-agent-mascot {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(58vh, 26rem);
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(45, 28, 70, 0.12));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.pn-agent-call-ui {
+  width: min(100%, 22rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  z-index: 2;
+  pointer-events: auto;
+}
+.pn-agent-call-warn {
+  margin: 0;
+  max-width: 18rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #7f1d1d;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+}
+.pn-agent-live-caption {
+  margin: 0 0 0.5rem;
+  max-width: 20rem;
+  min-height: 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgba(55, 42, 30, 0.88);
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+.pn-agent-live-caption.is-hearing {
+  color: #166534;
+}
+.pn-agent-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  width: auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.pn-agent-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 14px rgba(45, 18, 80, 0.2);
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
+}
+.pn-agent-tool-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 6px 18px rgba(45, 18, 80, 0.26);
+}
+.pn-agent-tool-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  box-shadow: 0 2px 8px rgba(45, 18, 80, 0.12);
+}
+.pn-agent-call-btn {
+  color: #111827;
+  background: rgba(245, 245, 247, 0.94);
+  border-color: rgba(255, 255, 255, 0.65);
+  border-radius: 0.85rem;
+}
+.pn-agent-call-btn.is-in-call {
+  color: #ef4444;
+  background: rgba(255, 244, 244, 0.94);
+  border-color: rgba(239, 68, 68, 0.28);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.22);
+}
+.pn-agent-call-icon {
+  width: 1.55rem;
+  height: 1.55rem;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+}
+.pn-agent-call-btn.is-in-call .pn-agent-call-icon {
+  filter: invert(36%) sepia(74%) saturate(2274%) hue-rotate(334deg) brightness(96%) contrast(94%);
+}
+body.pn-agent-in-call .pn-agent-call-btn.is-in-call:not(:disabled) {
+  animation: pn-agent-call-active 2s ease-in-out infinite;
+}
+@keyframes pn-agent-call-active {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+body.pn-agent-view-active .app-page-head {
+  display: none;
+}
+body.pn-agent-view-active .app-main-panels {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .story-panel-caption {
   margin: 0 0 0.5rem;
   font-size: 0.8125rem;
@@ -272,7 +593,8 @@
 }
 
 #panel-session.active,
-#panel-evaluate.active {
+#panel-evaluate.active,
+#panel-pn-agent.active {
   min-height: 0;
   flex: 1;
   width: 100%;
@@ -1588,46 +1910,102 @@ body.persona-user #panel-session.active {
   overflow-y: auto;
   overflow-x: hidden;
 }
-/* Naro 吉祥物 SVG — 浮在图卡上方，不占版面高度 */
+/* 小乐 AI 陪伴 — 浮在讲故事区左下角 */
 .naro-mascot-stage {
   position: absolute;
-  top: 0.35rem;
-  left: 50%;
+  left: 0.25rem;
+  bottom: 0.15rem;
   z-index: 6;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-end;
   width: auto;
   padding: 0;
-  transform: translateX(-50%);
   pointer-events: none;
 }
-.naro-mascot-stage.hidden {
-  display: none !important;
+.naro-mascot-stage .xiaole-mascot {
+  pointer-events: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.story-warmup-active .naro-mascot-svg {
-  width: 4rem;
+.naro-mascot-stage .xiaole-mascot:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--an-accent) 70%, transparent);
+  outline-offset: 4px;
+  border-radius: 0.75rem;
+}
+.story-warmup-active .xiaole-mode-listen {
+  width: 4.25rem;
+}
+.story-warmup-active .xiaole-mode-sleep {
+  width: 3.75rem;
 }
 .story-naro-guided-active .story-viewer-img-wrap {
   min-height: min(52vh, 32rem);
   max-height: min(68vh, 38rem);
 }
-.naro-mascot {
+.naro-mascot,
+.xiaole-mascot {
   display: inline-flex;
   line-height: 0;
+  position: relative;
+}
+.xiaole-mascot[data-companion="sleep"] {
+  animation: xiaole-sleep-breathe 3.6s ease-in-out infinite;
+}
+.xiaole-mascot[data-companion="active"] {
   animation: naro-float-idle 3.2s ease-in-out infinite;
 }
+.xiaole-mode-sleep {
+  width: 6.5rem;
+  max-width: 28vw;
+}
+.xiaole-mode-listen {
+  width: 5.75rem;
+  max-width: 24vw;
+}
+.xiaole-mascot:hover .xiaole-mode-sleep {
+  transform: scale(1.04);
+}
+@keyframes xiaole-sleep-breathe {
+  0%, 100% { transform: translateY(0); opacity: 0.92; }
+  50% { transform: translateY(2px); opacity: 1; }
+}
+.naro-mascot-img,
+.xiaole-mascot-img,
 .naro-mascot-svg {
-  width: 5.5rem;
   height: auto;
   display: block;
 }
+.naro-mascot-img,
+.xiaole-mascot-img {
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(72, 32, 110, 0.28));
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+.xiaole-mascot[data-companion="active"][data-state="listening"] .xiaole-mode-listen,
+.naro-mascot[data-state="listening"] .xiaole-mode-listen {
+  filter: drop-shadow(0 10px 20px rgba(72, 32, 110, 0.34)) brightness(1.03);
+}
+.xiaole-mascot[data-companion="active"][data-state="thinking"] .xiaole-mode-listen,
+.naro-mascot[data-state="thinking"] .xiaole-mode-listen {
+  filter: drop-shadow(0 8px 16px rgba(72, 32, 110, 0.22)) brightness(0.96) saturate(0.92);
+}
+.xiaole-mascot[data-companion="active"][data-state="speaking"] .xiaole-mode-listen,
+.naro-mascot[data-state="speaking"] .xiaole-mode-listen {
+  filter: drop-shadow(0 12px 22px rgba(124, 58, 237, 0.35)) brightness(1.06);
+}
+.xiaole-mascot[data-companion="active"][data-state="listening"],
 .naro-mascot[data-state="listening"] {
   animation: naro-float-listen 1.6s ease-in-out infinite;
 }
+.xiaole-mascot[data-companion="active"][data-state="thinking"],
 .naro-mascot[data-state="thinking"] {
   animation: naro-float-think 1.1s ease-in-out infinite;
 }
+.xiaole-mascot[data-companion="active"][data-state="speaking"],
 .naro-mascot[data-state="speaking"] {
   animation: naro-float-speak 0.45s ease-in-out infinite;
 }
@@ -2218,6 +2596,13 @@ body:has(#panel-session.active) .app-page-head .story-toggle--head {
   border-radius: 0.5rem;
   border: 1px solid hsl(var(--border));
   background: hsl(var(--muted) / 0.35);
+}
+.record-dialogue-transcript {
+  white-space: pre-wrap;
+}
+.record-narrative-audio {
+  width: 100%;
+  margin-top: 0.75rem;
 }
 .record-full-report-card {
   margin-top: 1.5rem;
