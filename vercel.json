@@ -4,25 +4,8 @@
   "buildCommand": "cd frontend && npm ci && npm run build:app",
   "functions": {
     "api/index.py": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "excludeFiles": "{models,data,outputs,tests,analyze_*,analyze-*,macro_*,regression_*,pth.v*,【Archived】*,frontend/node_modules,frontend/static/videos/pn-agent/_*,frontend/static/videos/pn-agent/previews}/**"
     }
-  },
-  "excludeFiles": [
-    "models/**",
-    "data/**",
-    "outputs/**",
-    "tests/**",
-    "analyze_*/**",
-    "analyze-*/**",
-    "macro_*/**",
-    "regression_*/**",
-    "pth.v*/**",
-    "【Archived】*/**",
-    "*.pth",
-    "*.pt",
-    "*.bin",
-    "*.safetensors",
-    "*.joblib",
-    "*.npz"
-  ]
+  }
 }
