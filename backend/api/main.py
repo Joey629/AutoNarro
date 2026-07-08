@@ -42,7 +42,7 @@ WEBSITE_DIR = REPO_ROOT / "website"
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 logger = setup_logging()
@@ -147,9 +147,14 @@ def marketing_home():
     return FileResponse(FRONTEND_DIR / "index.html", headers=_NO_CACHE_HEADERS)
 
 
-@app.get("/app")
-def saas_app():
+@app.get("/platform")
+def saas_platform():
     return FileResponse(FRONTEND_DIR / "index.html", headers=_NO_CACHE_HEADERS)
+
+
+@app.get("/app")
+def saas_app_legacy():
+    return RedirectResponse(url="/platform", status_code=301)
 
 
 _static = FRONTEND_DIR / "static"

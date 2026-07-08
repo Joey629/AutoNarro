@@ -16,7 +16,7 @@ const $ = (id) => document.getElementById(id);
 const PERSONA_KEY = "narro_persona";
 const LAST_EVAL_KEY = "narro_last_evaluation_id";
 
-const STORY_SHORT = { cat: "小猫", dog: "小狗", bird: "小鸟", goat: "小羊", "pn-agent": "小乐陪伴" };
+const STORY_SHORT = { cat: "小猫", dog: "小狗", bird: "小鸟", goat: "小羊", "pn-agent": "个人叙事Agent" };
 
 let currentEvaluationId = null;
 let lastBatchSummaryCsv = null;
@@ -75,16 +75,12 @@ const SAMPLE = {
 };
 
 const TAB_TITLES = {
-  session: ["讲故事", "先看完全部图卡，录下孩子的讲述，完成后到「我的记录」查看报告"],
-  "pn-agent": ["PN agent", ""],
+  session: ["MAIN评估Agent", "先看完全部图卡，录下孩子的讲述，完成后到「我的记录」查看报告"],
+  "pn-agent": ["个人叙事Agent", ""],
   history: ["我的记录", "查看并回溯历次评估结果"],
   insights: ["洞察", "长期进步追踪 · 关注薄弱项与告警"],
   profile: ["个人信息", "管理看护人与儿童基本信息"],
-  "learning-picturebooks": ["绘本学习", "原创电子绘本 · 亲子共读（与测评图卡故事不同）"],
-  "learning-courses": ["专属练习绘本", "根据多次评估 · DeepSeek 生成 · 场景插画"],
 };
-
-const LEARNING_TABS = new Set(["learning-picturebooks", "learning-courses"]);
 
 const PROFILE_CACHE_KEY = "narro_family_profile";
 const SESSION_KEY = "narro_session_token";
@@ -148,7 +144,7 @@ function showAuthGate(show) {
     void verifyAuthApiAvailable().then((ok) => {
       if (!ok) {
         setAuthGateError(
-          "认证服务未就绪：请在项目根目录执行 python run_web.py，并访问 http://127.0.0.1:8000/app（若刚更新代码，请先停止旧进程再启动）。"
+          "认证服务未就绪：请在项目根目录执行 python run_web.py，并访问 http://127.0.0.1:8000/platform（若刚更新代码，请先停止旧进程再启动）。"
         );
       } else {
         setAuthGateError("");
@@ -252,7 +248,7 @@ async function fetchJson(path, options = {}) {
             : "";
     if (res.status === 404 && path.startsWith("/api/auth/")) {
       detail =
-        "认证接口未找到。请用项目根目录执行 python run_web.py 并访问 http://127.0.0.1:8000/app（需重启服务以加载最新代码）。";
+        "认证接口未找到。请用项目根目录执行 python run_web.py 并访问 http://127.0.0.1:8000/platform（需重启服务以加载最新代码）。";
     }
     throw new Error(detail || `请求失败 (${res.status})`);
   }
@@ -337,14 +333,11 @@ function clearSidebarActive() {
   document
     .querySelectorAll("#historyNavItems .sidebar-nav-record-row")
     .forEach((r) => r.classList.remove("active"));
-  document
-    .querySelectorAll("#navUserLearning .sidebar-nav-item")
-    .forEach((r) => r.classList.remove("active"));
 }
 
 function setSidebarActive(name, evalId = null) {
   clearSidebarActive();
-  if (evalId != null) {
+  if (evalId != null && currentPersona !== "user") {
     const row = document.querySelector(
       `#historyNavItems .sidebar-nav-record-row[data-eval-id="${evalId}"]`
     );
@@ -353,12 +346,6 @@ function setSidebarActive(name, evalId = null) {
   }
   if (name === "profile") {
     $("sidebarProfileBtn")?.classList.add("active");
-    return;
-  }
-  if (LEARNING_TABS.has(name)) {
-    document
-      .querySelector(`#navUserLearning .sidebar-nav-item[data-tab="${name}"]`)
-      ?.classList.add("active");
     return;
   }
   const navRoot = currentPersona === "user" ? "#navUser" : "#navManager";
@@ -606,18 +593,10 @@ function toggleHistoryNavExpanded() {
   applyHistoryNavExpanded(!historyNavExpanded);
 }
 
-/** 侧栏收起时点击「我的记录」：展开侧栏与记录列表，并打开第一条 */
+/** 侧栏收起时点击「我的记录」：展开侧栏并打开记录列表 */
 async function openHistoryFromCollapsedSidebar() {
   applySidebarCollapsed(false);
-  applyHistoryNavExpanded(true);
-  let firstId = null;
-  try {
-    const items = await refreshUserHistoryNav();
-    firstId = items?.[0]?.id ?? null;
-  } catch {
-    /* refreshUserHistoryNav 已展示加载失败 */
-  }
-  switchTab("history", firstId != null ? { evalId: firstId } : {});
+  switchTab("history");
 }
 
 function switchTab(name, { evalId = null } = {}) {
@@ -635,10 +614,8 @@ function switchTab(name, { evalId = null } = {}) {
   if ($("mainTitle")) $("mainTitle").textContent = title;
   if ($("mainSub")) {
     if (name === "history" && evalId != null) {
-      const label = document.querySelector(
-        `#historyNavItems .sidebar-nav-record-row[data-eval-id="${evalId}"] .sidebar-nav-record-title`
-      )?.textContent;
-      $("mainSub").textContent = label?.trim() || sub;
+      const label = historyRecordLabelFromDom(evalId);
+      $("mainSub").textContent = label !== "该记录" ? label : sub;
     } else {
       $("mainSub").textContent = sub;
     }
@@ -652,19 +629,10 @@ function switchTab(name, { evalId = null } = {}) {
   updateHistoryAskNarroBtn();
 
   if (name === "history") {
-    if (currentPersona === "user") {
-      $("historyEmpty")?.classList.toggle(
-        "hidden",
-        !!evalId || !$("historyDetailWrap")?.classList.contains("hidden")
-      );
-      loadHistory({ evalId });
-    } else {
-      loadHistory();
-    }
+    if (currentPersona === "user") loadHistory({ evalId });
+    else loadHistory();
   }
   if (name === "insights") loadInsights();
-  if (name === "learning-picturebooks") window.NarroPictureBooks?.onTabShown?.();
-  if (name === "learning-courses") window.NarroPersonalizedBooks?.onTabShown?.();
   if (name === "pn-agent") window.NarroPnAgent?.onTabShown?.();
   if (prev === "pn-agent" && name !== "pn-agent") window.NarroPnAgent?.onTabHidden?.();
   document.body.classList.toggle("pn-agent-view-active", name === "pn-agent");
@@ -744,19 +712,12 @@ $("navUser")?.addEventListener("click", (e) => {
     return;
   }
   const tabBtn = e.target.closest(
-    "#navUser .sidebar-nav-item[data-tab], #navUserLearning .sidebar-nav-item[data-tab], #navManager .sidebar-nav-item[data-tab]"
+    "#navUser .sidebar-nav-item[data-tab], #navManager .sidebar-nav-item[data-tab]"
   );
   if (tabBtn && !tabBtn.closest("#historyNavItems")) {
     switchTab(tabBtn.dataset.tab);
     if (window.matchMedia("(max-width: 767px)").matches) closeMobileSidebar();
   }
-});
-
-$("navUserLearning")?.addEventListener("click", (e) => {
-  const tabBtn = e.target.closest(".sidebar-nav-item[data-tab]");
-  if (!tabBtn?.dataset.tab) return;
-  switchTab(tabBtn.dataset.tab);
-  if (window.matchMedia("(max-width: 767px)").matches) closeMobileSidebar();
 });
 
 $("sidebarProfileBtn")?.addEventListener("click", () => {
@@ -900,12 +861,7 @@ $("historyNavToggle")?.addEventListener("click", async (e) => {
     await openHistoryFromCollapsedSidebar();
     return;
   }
-  if (activeTabName !== "history") {
-    switchTab("history");
-    applyHistoryNavExpanded(true);
-    return;
-  }
-  toggleHistoryNavExpanded();
+  switchTab("history");
 });
 
 $("sidebarCollapseBtn")?.addEventListener("click", () => applySidebarCollapsed(true));
@@ -2160,7 +2116,7 @@ function storyLabel(storyType) {
 }
 
 function historyStoryPhrase(storyType) {
-  if (storyType === "pn-agent") return "小乐陪伴";
+  if (storyType === "pn-agent") return "个人叙事Agent";
   return `${storyLabel(storyType)}故事`;
 }
 
@@ -2203,12 +2159,12 @@ function paintPnAgentHistoryUI(row, data) {
   $("historyDetailBlock")?.classList.add("record-report--pn-agent");
   setHistoryAssessmentSectionsVisible(false);
   const label = (row?.record_label || "").trim();
-  const titleText = label || `小乐陪伴 · ${formatHistoryDateShort(row?.created_at)}`;
+  const titleText = label || `个人叙事Agent · ${formatHistoryDateShort(row?.created_at)}`;
   if ($(REPORT_UI.history.title)) $(REPORT_UI.history.title).textContent = titleText;
   if ($(REPORT_UI.history.evalId)) {
     $(REPORT_UI.history.evalId).textContent = String(data.evaluation_id ?? "—");
   }
-  if ($(REPORT_UI.history.storyLabel)) $(REPORT_UI.history.storyLabel).textContent = "小乐陪伴";
+  if ($(REPORT_UI.history.storyLabel)) $(REPORT_UI.history.storyLabel).textContent = "个人叙事Agent";
   const elapsed = row?.elapsed_ms ?? data?.elapsed_ms ?? 0;
   if ($(REPORT_UI.history.elapsed)) {
     $(REPORT_UI.history.elapsed).textContent = elapsed ? `${elapsed}ms` : "语音陪伴";
@@ -2236,12 +2192,19 @@ function resetPnAgentHistoryUI() {
   if (narrTitle) narrTitle.textContent = "讲述原文";
 }
 
-function formatHistoryNavLabel(r) {
+function formatHistoryTableLabel(r, index, total) {
   const custom = (r.record_label || "").trim();
   if (custom) return custom;
-  const story = historyStoryPhrase(r.story_type);
-  const date = formatHistoryDateShort(r.created_at);
-  return `${story} · ${date}`;
+  return `第${total - index}次 · ${historyStoryPhrase(r.story_type)} · ${formatHistoryDateShort(r.created_at)}`;
+}
+
+function historyRecordLabelFromDom(evalId) {
+  const tableCell = document.querySelector(
+    `#historyUserBody tr[data-eval-id="${evalId}"] [data-history-label]`
+  );
+  if (tableCell?.textContent?.trim()) return tableCell.textContent.trim();
+  const row = document.querySelector(`.narro-nav-record[data-eval-id="${evalId}"]`);
+  return row?.querySelector(".sidebar-nav-record-title")?.textContent?.trim() || "该记录";
 }
 
 function formatHistoryDateShort(createdAt) {
@@ -2391,7 +2354,6 @@ function closeNarroChatDrawer() {
 function hideHistoryDetail() {
   closeNarroChatDrawer();
   $("historyDetailWrap")?.classList.add("hidden");
-  $("historyEmpty")?.classList.remove("hidden");
   selectedHistoryEvalId = null;
   updateHistoryAskNarroBtn();
   document.querySelectorAll("#historyNavItems .sidebar-nav-record-row").forEach((el) =>
@@ -2400,6 +2362,13 @@ function hideHistoryDetail() {
   document.querySelectorAll(".history-row-clickable, .history-row-manager-clickable").forEach((tr) =>
     tr.classList.remove("history-row-selected")
   );
+  if (currentPersona === "user") {
+    const hasRows = !!$("historyUserBody")?.querySelector("tr[data-eval-id]");
+    $("historyUserListWrap")?.classList.toggle("hidden", !hasRows);
+    $("historyEmpty")?.classList.toggle("hidden", hasRows);
+  } else {
+    $("historyEmpty")?.classList.remove("hidden");
+  }
 }
 
 function resetHistoryCoachThread() {
@@ -2426,17 +2395,109 @@ function renderHistoryDetail(data, row) {
 
   $("historyDetailWrap")?.classList.remove("hidden");
   $("historyEmpty")?.classList.add("hidden");
+  if (currentPersona === "user") $("historyUserListWrap")?.classList.add("hidden");
   setSidebarActive("history", data.evaluation_id);
   document.querySelectorAll(".history-row-clickable, .history-row-manager-clickable").forEach((tr) => {
     tr.classList.toggle("history-row-selected", String(tr.dataset.evalId) === String(data.evaluation_id));
   });
   updateHistoryAskNarroBtn();
   closeNarroChatDrawer();
+  if (currentPersona === "user") {
+    const title = $(REPORT_UI.history.title)?.textContent?.trim();
+    if (title && $("mainSub")) $("mainSub").textContent = title;
+  }
+}
+
+function renderUserHistoryTable(items, { selectedId = null } = {}) {
+  const wrap = $("historyUserListWrap");
+  const tbody = $("historyUserBody");
+  const emptyEl = $("historyEmpty");
+  const detailOpen = !$("historyDetailWrap")?.classList.contains("hidden");
+  if (!tbody) return;
+
+  if (!items.length) {
+    tbody.innerHTML = "";
+    wrap?.classList.add("hidden");
+    if (!detailOpen) emptyEl?.classList.remove("hidden");
+    return;
+  }
+
+  if (!detailOpen) {
+    wrap?.classList.remove("hidden");
+    emptyEl?.classList.add("hidden");
+  }
+
+  const total = items.length;
+  tbody.innerHTML = items
+    .map((r, index) => {
+      const selected = selectedId != null && String(r.id) === String(selectedId);
+      const label = formatHistoryTableLabel(r, index, total);
+      const type = historyStoryPhrase(r.story_type);
+      const date = formatHistoryDateShort(r.created_at);
+      const score =
+        r.story_type === "pn-agent"
+          ? r.elapsed_ms
+            ? `${Math.round(Number(r.elapsed_ms) / 1000)}秒`
+            : "通话"
+          : r.micro_sum != null
+            ? `${r.micro_sum}/15`
+            : "—";
+      const status = isEvaluationInProgress(r.status)
+        ? '<span class="history-status-pending">分析中</span>'
+        : '<span class="history-status-done">完成</span>';
+      return `<tr class="history-row-clickable${selected ? " history-row-selected" : ""}" data-eval-id="${r.id}">
+        <td class="font-mono text-xs text-muted-foreground">#${r.id}</td>
+        <td class="font-medium" data-history-label>${escapeHtml(label)}</td>
+        <td>${escapeHtml(type)}</td>
+        <td class="whitespace-nowrap">${escapeHtml(date)}</td>
+        <td class="tabular-nums">${score}</td>
+        <td>${status}</td>
+        <td class="whitespace-nowrap">
+          <button type="button" class="btn-outline btn-sm" data-view-eval="${r.id}">查看</button>
+          <button type="button" class="btn-ghost btn-sm" data-history-table-rename="${r.id}">重命名</button>
+          <button type="button" class="btn-ghost btn-sm text-destructive" data-history-table-delete="${r.id}">删除</button>
+        </td>
+      </tr>`;
+    })
+    .join("");
+}
+
+function bindUserHistoryTableEvents() {
+  const tbody = $("historyUserBody");
+  if (!tbody || tbody.dataset.bound === "1") return;
+  tbody.dataset.bound = "1";
+
+  tbody.addEventListener("click", (e) => {
+    const renameBtn = e.target.closest("[data-history-table-rename]");
+    if (renameBtn?.dataset.historyTableRename) {
+      e.stopPropagation();
+      void renameHistoryRecord(renameBtn.dataset.historyTableRename);
+      return;
+    }
+    const deleteBtn = e.target.closest("[data-history-table-delete]");
+    if (deleteBtn?.dataset.historyTableDelete) {
+      e.stopPropagation();
+      void deleteHistoryRecord(deleteBtn.dataset.historyTableDelete);
+      return;
+    }
+    const viewBtn = e.target.closest("[data-view-eval]");
+    if (viewBtn?.dataset.viewEval) {
+      e.stopPropagation();
+      void openEvaluation(viewBtn.dataset.viewEval);
+      return;
+    }
+    const row = e.target.closest("tr.history-row-clickable[data-eval-id]");
+    if (row?.dataset.evalId) void openEvaluation(row.dataset.evalId);
+  });
 }
 
 function renderHistorySidebarNav(items, { selectedId = null } = {}) {
   const container = $("historyNavItems");
   if (!container) return;
+  if (currentPersona === "user") {
+    container.innerHTML = "";
+    return;
+  }
   applyHistoryNavExpanded(historyNavExpanded);
   if (!items.length) {
     container.innerHTML = '<span class="sidebar-nav-empty">暂无记录</span>';
@@ -2451,7 +2512,7 @@ function renderHistorySidebarNav(items, { selectedId = null } = {}) {
         `第${total - index}次 · ${historyStoryPhrase(r.story_type)} · ${formatHistoryDateShort(r.created_at)}`;
       const hint =
         r.story_type === "pn-agent"
-          ? "小乐陪伴通话"
+          ? "个人叙事Agent通话"
           : r.pred_SC_Sum != null
             ? `宏观 SC ${Number(r.pred_SC_Sum).toFixed(1)} · SS ${r.micro_sum ?? "—"}/15`
             : "";
@@ -2685,12 +2746,15 @@ function openNarroAlert(message, { title = "提示", confirmLabel = "知道了" 
 }
 
 function historyRecordLabel(evalId) {
-  const row = document.querySelector(`.narro-nav-record[data-eval-id="${evalId}"]`);
-  return row?.querySelector(".sidebar-nav-record-title")?.textContent?.trim() || "该记录";
+  return historyRecordLabelFromDom(evalId);
 }
 
 async function applyHistoryRecordRenamed(evalId, label) {
   await refreshUserHistoryNav({ highlightEvalId: evalId });
+  const labelCell = document.querySelector(
+    `#historyUserBody tr[data-eval-id="${evalId}"] [data-history-label]`
+  );
+  if (labelCell) labelCell.textContent = label;
   setSidebarActive(null, evalId);
   if (
     String(selectedHistoryEvalId) === String(evalId) ||
@@ -3414,9 +3478,11 @@ $("sampleBtn")?.addEventListener("click", () => {
 $("narrativeText")?.addEventListener("input", updateCharCount);
 async function refreshUserHistoryNav({ highlightEvalId = null } = {}) {
   if (currentPersona !== "user") return;
-  const container = $("historyNavItems");
-  if (container)
-    container.innerHTML = '<span class="sidebar-nav-empty">加载中…</span>';
+  const tbody = $("historyUserBody");
+  const detailOpen = !$("historyDetailWrap")?.classList.contains("hidden");
+  if (tbody && !detailOpen) {
+    tbody.innerHTML = `<tr><td colspan="7" class="text-muted-foreground">加载中…</td></tr>`;
+  }
   try {
     const { items } = await fetchJson("/api/history?limit=50");
     const onHistoryTab = $("panel-history")?.classList.contains("active");
@@ -3424,13 +3490,16 @@ async function refreshUserHistoryNav({ highlightEvalId = null } = {}) {
       highlightEvalId ??
       (onHistoryTab
         ? selectedHistoryEvalId ||
-          (!$("historyDetailWrap")?.classList.contains("hidden") ? currentEvaluationId : null)
+          (detailOpen ? currentEvaluationId : null)
         : null);
-    renderHistorySidebarNav(items, { selectedId });
+    renderUserHistoryTable(items, { selectedId });
+    renderHistorySidebarNav([], {});
     return items;
-  } catch {
-    if (container)
-      container.innerHTML = '<span class="sidebar-nav-empty">加载失败</span>';
+  } catch (e) {
+    if (tbody && !detailOpen) {
+      tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(e.message || "加载失败")}</td></tr>`;
+    }
+    renderHistorySidebarNav([], {});
     return [];
   }
 }
@@ -3449,18 +3518,29 @@ async function loadHistory({ evalId = null } = {}) {
   if (!reopenId) hideHistoryDetail();
 
   if (isUser) {
+    bindUserHistoryTableEvents();
+    const tbody = $("historyUserBody");
+    const detailOpen = !$("historyDetailWrap")?.classList.contains("hidden");
+    if (tbody && !detailOpen) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-muted-foreground">加载中…</td></tr>`;
+    }
     try {
       const { items } = await fetchJson("/api/history?limit=50");
-      renderHistorySidebarNav(items, { selectedId: reopenId });
+      renderUserHistoryTable(items, { selectedId: reopenId });
+      renderHistorySidebarNav([], {});
       if (reopenId && items.some((r) => r.id === reopenId || String(r.id) === String(reopenId))) {
         await openEvaluation(reopenId, { silent: true });
-      } else if (!items.length) {
+      } else if (!items.length && !detailOpen) {
+        $("historyUserListWrap")?.classList.add("hidden");
         emptyEl?.classList.remove("hidden");
       }
     } catch (e) {
       renderHistorySidebarNav([], {});
-      if (emptyEl) emptyEl.textContent = e.message;
-      emptyEl?.classList.remove("hidden");
+      if (tbody && !detailOpen) {
+        tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(e.message || "加载失败")}</td></tr>`;
+      }
+      if (emptyEl) emptyEl.textContent = e.message || "加载失败";
+      if (!detailOpen) emptyEl?.classList.remove("hidden");
     }
     return;
   }
@@ -3527,11 +3607,22 @@ async function loadHistory({ evalId = null } = {}) {
 }
 
 function refreshHistoryClick() {
-  if (currentPersona === "user") refreshUserHistoryNav();
-  else loadHistory();
+  if (currentPersona === "user") {
+    const reopenId =
+      selectedHistoryEvalId ||
+      (!$("historyDetailWrap")?.classList.contains("hidden") ? currentEvaluationId : null);
+    loadHistory({ evalId: reopenId });
+  } else {
+    loadHistory();
+  }
 }
 document.querySelectorAll(".refresh-history-btn").forEach((btn) => {
   btn.addEventListener("click", refreshHistoryClick);
+});
+$("historyBackToListBtn")?.addEventListener("click", () => {
+  hideHistoryDetail();
+  if ($("mainSub")) $("mainSub").textContent = TAB_TITLES.history?.[1] || "";
+  loadHistory();
 });
 $("historyFilterBtn")?.addEventListener("click", () => loadHistory());
 $("historyClearFilterBtn")?.addEventListener("click", () => {

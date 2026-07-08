@@ -1,6 +1,6 @@
 # POC 部署（方案 A · 最简）
 
-目标：**本机跑通 → 公网 HTTPS 链接 → 他人打开 `/app` 试用**。不必先买云服务器。
+目标：**本机跑通 → 公网 HTTPS 链接 → 他人打开 `/platform` 试用**。不必先买云服务器。
 
 ## 阶段 0：5 分钟试通（随机域名）
 
@@ -25,7 +25,7 @@ https://requirements-mechanical-last-whereas.trycloudflare.com
 也可查看：`cat data/logs/poc_tunnel_url.txt`
 
 - 官网：上述 URL `/`
-- 工作台：上述 URL `/app`
+- 工作台：上述 URL `/platform`
 - 本机自测：`http://127.0.0.1:8000/api/health`
 
 **注意：** Mac 需保持唤醒；关掉终端里 `cloudflared` 或合盖后外网链接会断。
@@ -43,7 +43,7 @@ kill $(cat data/logs/poc_web.pid)   # 停 Web
 DEEPSEEK_API_KEY=sk-...
 NARRO_MODEL_VERSION=narro_v4
 NARRO_BART_FORCE_CPU=1
-# 试点阶段可不设 NARRO_REQUIRE_API_KEY，方便直接打开 /app
+# 试点阶段可不设 NARRO_REQUIRE_API_KEY，方便直接打开 /platform
 ```
 
 上线前再加：
@@ -53,7 +53,7 @@ NARRO_API_KEY=用 openssl rand -hex 32 生成
 NARRO_REQUIRE_API_KEY=1
 ```
 
-浏览器 `/app` 控制台：
+浏览器 `/platform` 控制台：
 
 ```javascript
 localStorage.setItem("narro_api_key", "与 NARRO_API_KEY 相同");

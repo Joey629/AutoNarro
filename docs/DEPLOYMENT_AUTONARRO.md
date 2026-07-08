@@ -7,7 +7,8 @@
 | 地址 | 用途 |
 |------|------|
 | `https://autonarro.com/` | 品牌官网 |
-| `https://autonarro.com/app` | SaaS 工作台（beta） |
+| `https://autonarro.com/platform` | SaaS 工作台（beta） |
+| `https://autonarro.com/app` | 旧路径，301 跳转到 `/platform` |
 | `https://autonarro.com/api/health` | 健康检查 |
 
 默认模型版本：`narro_v4`（BART 线索 + QiDeBERTa-base 宏观 SS + XGB 宏观 SC），见 `configs/model_registry.json`。
@@ -77,7 +78,7 @@ sudo certbot --nginx -d autonarro.com -d www.autonarro.com
 
 ## 5. Beta 用户 API Key
 
-浏览器打开 `/app` 后，控制台执行（与服务器 `NARRO_API_KEY` 一致）：
+浏览器打开 `/platform` 后，控制台执行（与服务器 `NARRO_API_KEY` 一致）：
 
 ```javascript
 localStorage.setItem("narro_api_key", "你的试点 Key");

@@ -18,7 +18,7 @@
 | URL | 说明 |
 |-----|------|
 | `/` | 官网 |
-| `/app` | SaaS beta |
+| `/platform` | SaaS beta |
 
 部署：[docs/DEPLOYMENT_AUTONARRO.md](docs/DEPLOYMENT_AUTONARRO.md) · 训练：[docs/TRAINING.md](docs/TRAINING.md)
 

@@ -33,9 +33,9 @@ python run_web.py
 开发时可在 `frontend/` 下运行 `npm run watch` 自动重编译样式。
 
 - **品牌官网**：http://127.0.0.1:8000/
-- **SaaS 工作台**：http://127.0.0.1:8000/app
+- **SaaS 工作台**：http://127.0.0.1:8000/platform
 
-- **官网 / SaaS**：http://127.0.0.1:8000/ 与 `/app`（生产域名见 [docs/DEPLOYMENT_AUTONARRO.md](docs/DEPLOYMENT_AUTONARRO.md)）
+- **官网 / SaaS**：http://127.0.0.1:8000/ 与 `/platform`（生产域名见 [docs/DEPLOYMENT_AUTONARRO.md](docs/DEPLOYMENT_AUTONARRO.md)）
 - **默认模型**：`narro_v4`（`configs/model_registry.json`）
 - **离线训练**：[docs/TRAINING.md](docs/TRAINING.md)
 - **部署**：[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)

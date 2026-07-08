@@ -23,6 +23,7 @@ _BLOCKED_PATH_RE = re.compile(
 _PUBLIC_PREFIXES = (
     "/static/",
     "/website/",
+    "/platform",
     "/app",
     "/api/health",
     "/api/meta",

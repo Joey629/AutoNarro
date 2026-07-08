@@ -1471,6 +1471,48 @@ body.persona-user #panel-session.active {
   align-items: center;
 }
 
+/* 家庭版：记录改由主区表格管理，侧栏仅保留「我的记录」入口 */
+#navUser .narro-history-group .sidebar-nav-children,
+#navUser .narro-history-group .sidebar-nav-chevron-hit {
+  display: none !important;
+}
+#navUser .narro-history-group > .sidebar-nav-group-toggle .sidebar-nav-label-row {
+  display: block;
+}
+
+.history-user-table-shell {
+  background: hsl(var(--card));
+}
+.history-user-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+}
+.history-user-table td {
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+.history-status-pending {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+.history-status-done {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted) / 0.5);
+}
+
 /* 侧栏：记录行 + kebab */
 .narro-history-group.history-expanded > .sidebar-nav-children {
   display: block;

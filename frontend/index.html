@@ -112,22 +112,22 @@
         </div>
 
         <nav class="app-sidebar-nav" id="navUser" aria-label="工作台导航">
-          <button type="button" class="sidebar-nav-item active" data-tab="session" aria-label="讲故事测评">
+          <button type="button" class="sidebar-nav-item active" data-tab="session" aria-label="MAIN评估Agent">
             <svg class="sidebar-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="9"/>
               <path d="M10.2 8.8v6.4L15.8 12 10.2 8.8z"/>
             </svg>
-            <span class="sidebar-nav-label">讲故事</span>
-            <span class="sidebar-nav-tooltip" role="tooltip">讲故事</span>
+            <span class="sidebar-nav-label">MAIN评估Agent</span>
+            <span class="sidebar-nav-tooltip" role="tooltip">MAIN评估Agent</span>
           </button>
-          <button type="button" class="sidebar-nav-item" data-tab="pn-agent" aria-label="PN agent">
+          <button type="button" class="sidebar-nav-item" data-tab="pn-agent" aria-label="个人叙事Agent">
             <svg class="sidebar-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3z"/>
               <path d="M5 17.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z"/>
               <path d="M18.5 15.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7.7-1.6z"/>
             </svg>
-            <span class="sidebar-nav-label">PN agent</span>
-            <span class="sidebar-nav-tooltip" role="tooltip">PN agent</span>
+            <span class="sidebar-nav-label">个人叙事Agent</span>
+            <span class="sidebar-nav-tooltip" role="tooltip">个人叙事Agent</span>
           </button>
           <div class="sidebar-nav-group narro-history-group history-expanded" id="historyNavGroup">
             <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="historyNavToggle" data-tab="history" aria-expanded="true" aria-label="我的记录">
@@ -156,27 +156,6 @@
         </nav>
 
         <div class="sidebar-bottom only-user" id="sidebarBottom">
-          <nav class="sidebar-nav-secondary" id="navUserLearning" aria-label="学习">
-            <button type="button" class="sidebar-nav-item" data-tab="learning-picturebooks" aria-label="绘本学习">
-              <svg class="sidebar-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                <path d="M8 7h8M8 11h6"/>
-              </svg>
-              <span class="sidebar-nav-label">绘本学习</span>
-              <span class="sidebar-nav-tooltip" role="tooltip">绘本学习</span>
-            </button>
-            <button type="button" class="sidebar-nav-item" data-tab="learning-courses" aria-label="专属练习绘本">
-              <svg class="sidebar-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 14l9-5-9-5-9 5 9 5z"/>
-                <path d="M12 14v7"/>
-                <path d="M5 12.5V19l7 4 7-4v-6.5"/>
-              </svg>
-              <span class="sidebar-nav-label">专属绘本</span>
-              <span class="sidebar-nav-tooltip" role="tooltip">专属练习绘本</span>
-            </button>
-          </nav>
-
         <div class="sidebar-profile-wrap only-user" id="sidebarProfileWrap">
           <button
             type="button"
@@ -234,7 +213,7 @@
       <header class="app-page-head">
         <button type="button" class="app-mobile-menu-btn" id="mobileSidebarBtn" aria-label="打开导航" aria-expanded="false">☰</button>
         <div class="app-page-head-text">
-          <h1 id="mainTitle">讲故事</h1>
+          <h1 id="mainTitle">MAIN评估Agent</h1>
           <p id="mainSub">先看完全部图卡，录下孩子的讲述，完成后到「我的记录」查看报告</p>
         </div>
         <div class="app-page-head-actions">
@@ -257,7 +236,7 @@
         </div>
       </header>
       <div class="app-main-panels" id="tabPanelsRoot">
-        <section class="tab-panel only-user pn-agent-panel" id="panel-pn-agent" aria-label="PN agent">
+        <section class="tab-panel only-user pn-agent-panel" id="panel-pn-agent" aria-label="个人叙事Agent">
           <div class="pn-agent-stage">
             <div class="pn-agent-hero" aria-hidden="true">
               <video
@@ -542,8 +521,28 @@
           <div id="historyPanelShell" class="history-panel-shell space-y-4">
             <h2 class="text-lg font-semibold hidden only-manager">历史记录</h2>
 
-            <div class="only-user max-w-2xl mx-auto w-full">
-              <p id="historyEmpty" class="text-sm text-muted-foreground py-8 text-center">在左侧选择一条记录查看详情，或前往「讲故事」开始新测评。</p>
+            <div class="only-user space-y-4 w-full" id="historyUserListWrap">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="text-lg font-semibold">我的记录</h2>
+                <button type="button" class="btn-outline btn-sm refresh-history-btn">刷新</button>
+              </div>
+              <div class="rounded-lg border overflow-x-auto history-user-table-shell">
+                <table class="table-ui w-full history-user-table">
+                  <thead>
+                    <tr>
+                      <th class="w-16">#</th>
+                      <th>记录</th>
+                      <th>类型</th>
+                      <th>日期</th>
+                      <th>宏观 SS</th>
+                      <th>状态</th>
+                      <th class="w-48"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="historyUserBody"></tbody>
+                </table>
+              </div>
+              <p id="historyEmpty" class="hidden text-sm text-muted-foreground py-8 text-center">暂无记录。前往「MAIN评估Agent」或「个人叙事Agent」开始新记录。</p>
             </div>
 
             <div class="only-manager space-y-4">
@@ -569,6 +568,7 @@
             <section id="historyDetailWrap" class="hidden only-user history-detail-split">
             <div class="history-split-main">
             <div class="record-detail-body">
+            <button type="button" class="btn-ghost btn-sm text-xs mb-3 -ml-1" id="historyBackToListBtn">← 全部记录</button>
             <article id="historyDetailBlock" class="record-report">
               <header class="record-report-header">
                 <div class="min-w-0">
@@ -854,103 +854,12 @@
           </div>
         </section>
 
-        <!-- 绘本学习 -->
-        <section class="tab-panel tab-scroll only-user picturebooks-panel" id="panel-learning-picturebooks" aria-label="绘本学习">
-          <div class="picturebooks-layout">
-            <div class="picturebooks-library" id="picturebooksLibrary">
-              <header class="picturebooks-header">
-                <p class="picturebooks-lead">这里是 Narro 原创电子绘本，和「讲故事」里的测评图卡不是同一批故事。读完可以去「讲故事」用图卡做正式练习。</p>
-              </header>
-              <div class="picturebooks-grid" id="picturebooksGrid" role="list" aria-label="绘本书架"></div>
-              <p class="picturebooks-loading hidden" id="picturebooksLoading" role="status">正在加载绘本…</p>
-              <p class="picturebooks-error hidden" id="picturebooksError" role="alert"></p>
-            </div>
-
-            <div class="picturebooks-reader hidden" id="picturebooksReader" aria-hidden="true">
-              <header class="picturebooks-reader-toolbar">
-                <button type="button" class="picturebooks-back-btn" id="picturebooksBackBtn" aria-label="返回书架">
-                  <span aria-hidden="true">‹</span> 书架
-                </button>
-                <div class="picturebooks-reader-titles">
-                  <h2 class="picturebooks-reader-title" id="picturebooksReaderTitle">—</h2>
-                  <p class="picturebooks-reader-meta" id="picturebooksReaderMeta"></p>
-                </div>
-                <button type="button" class="btn-outline btn-sm picturebooks-practice-btn" id="picturebooksPracticeBtn">
-                  去讲故事练习
-                </button>
-              </header>
-
-              <div class="picturebooks-stage">
-                <button type="button" class="picturebooks-nav-btn picturebooks-nav-prev" id="picturebooksPrevBtn" aria-label="上一页">‹</button>
-                <figure class="picturebooks-figure">
-                  <div class="picturebooks-img-wrap picturebooks-img-wrap--art">
-                    <img id="picturebooksPageImg" src="" alt="" class="picturebooks-page-img" />
-                  </div>
-                  <figcaption class="picturebooks-caption" id="picturebooksCaption"></figcaption>
-                  <p class="picturebooks-page-indicator tabular-nums" id="picturebooksPageIndicator">1 / 6</p>
-                </figure>
-                <button type="button" class="picturebooks-nav-btn picturebooks-nav-next" id="picturebooksNextBtn" aria-label="下一页">›</button>
-              </div>
-
-              <div class="picturebooks-dots" id="picturebooksDots" role="tablist" aria-label="页码"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 专属练习绘本（多次评估 + DeepSeek） -->
-        <section class="tab-panel tab-scroll only-user personalized-books-panel" id="panel-learning-courses" aria-label="专属练习绘本">
-          <div class="personalized-books-layout">
-            <div class="personalized-books-library" id="personalizedBooksLibrary">
-              <header class="picturebooks-header personalized-books-header">
-                <p class="picturebooks-lead" id="personalizedBooksLead">
-                  根据孩子多次「讲故事」评估结果，用 DeepSeek 生成专属练习绘本。插画为内置场景图（DeepSeek 暂不支持文生图）。
-                </p>
-                <div class="personalized-books-status card" id="personalizedBooksStatus" role="status"></div>
-                <div class="personalized-books-actions">
-                  <button type="button" class="btn-primary btn-sm" id="personalizedBooksGenerateBtn" disabled>
-                    生成专属绘本
-                  </button>
-                  <button type="button" class="btn-outline btn-sm" id="personalizedBooksRefreshBtn">刷新</button>
-                </div>
-              </header>
-              <div class="picturebooks-grid" id="personalizedBooksGrid" role="list" aria-label="专属绘本书架"></div>
-              <p class="picturebooks-loading hidden" id="personalizedBooksLoading" role="status">正在处理…</p>
-              <p class="picturebooks-error hidden" id="personalizedBooksError" role="alert"></p>
-            </div>
-
-            <div class="picturebooks-reader hidden" id="personalizedBooksReader" aria-hidden="true">
-              <header class="picturebooks-reader-toolbar">
-                <button type="button" class="picturebooks-back-btn" id="personalizedBooksBackBtn" aria-label="返回书架">
-                  <span aria-hidden="true">‹</span> 书架
-                </button>
-                <div class="picturebooks-reader-titles">
-                  <h2 class="picturebooks-reader-title" id="personalizedBooksReaderTitle">—</h2>
-                  <p class="picturebooks-reader-meta" id="personalizedBooksReaderMeta"></p>
-                </div>
-              </header>
-              <p class="personalized-books-parent-tip hidden" id="personalizedBooksParentTip"></p>
-              <div class="picturebooks-stage">
-                <button type="button" class="picturebooks-nav-btn picturebooks-nav-prev" id="personalizedBooksPrevBtn" aria-label="上一页">‹</button>
-                <figure class="picturebooks-figure">
-                  <div class="picturebooks-img-wrap picturebooks-img-wrap--art">
-                    <img id="personalizedBooksPageImg" src="" alt="" class="picturebooks-page-img" />
-                  </div>
-                  <figcaption class="picturebooks-caption" id="personalizedBooksCaption"></figcaption>
-                  <p class="picturebooks-page-indicator tabular-nums" id="personalizedBooksPageIndicator">1 / 5</p>
-                </figure>
-                <button type="button" class="picturebooks-nav-btn picturebooks-nav-next" id="personalizedBooksNextBtn" aria-label="下一页">›</button>
-              </div>
-              <div class="picturebooks-dots" id="personalizedBooksDots" role="tablist" aria-label="页码"></div>
-            </div>
-          </div>
-        </section>
-
         <!-- 洞察 -->
         <section class="tab-panel tab-scroll p-6" id="panel-insights">
           <div class="max-w-3xl mx-auto w-full space-y-6">
             <p class="text-sm text-muted-foreground" id="insightsIntro">汇总历次叙事评估，观察长期进步并查看需关注的薄弱项。</p>
             <div id="insightsEmpty" class="hidden rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-              暂无评估数据。请先在「讲故事」完成至少一次讲述。
+              暂无评估数据。请先在「MAIN评估Agent」完成至少一次讲述。
             </div>
             <div id="insightsContent" class="hidden space-y-4">
               <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" id="insightsSummary"></div>
@@ -1031,8 +940,6 @@
   <script src="/static/js/narro-ui.js"></script>
   <script src="/static/js/auth-bg.js"></script>
   <script src="/static/js/story-coach.js"></script>
-  <script src="/static/js/picture-books.js"></script>
-  <script src="/static/js/personalized-books.js"></script>
   <script src="/static/js/pn-agent-call.js"></script>
   <script src="/static/js/app.js"></script>
 </body>

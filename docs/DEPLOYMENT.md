@@ -20,7 +20,7 @@
 ### 方式 A：内网 / 园所 VPN（最安全）
 
 - 服务器只监听内网 IP 或 [Tailscale](https://tailscale.com) 私有地址
-- 教师通过 VPN 访问 `http://100.x.x.x:8000/app`
+- 教师通过 VPN 访问 `http://100.x.x.x:8000/platform`
 - **无需公网暴露**，语料风险最低
 
 ### 方式 B：Cloudflare Tunnel（免公网 IP）
@@ -47,7 +47,7 @@ export NARRO_HTTPS=1                         # 启用 HSTS（HTTPS 时）
 export DEEPSEEK_API_KEY="..."                    # 可选 AI 辅导
 ```
 
-前端首次打开 `/app` 时在浏览器控制台设置（或后续做登录页）：
+前端首次打开 `/platform` 时在浏览器控制台设置（或后续做登录页）：
 
 ```javascript
 localStorage.setItem("narro_api_key", "与服务器相同的 Key");
@@ -82,7 +82,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 | 路径 | 用途 |
 |------|------|
 | `https://autonarro.com/` | 品牌官网（营销） |
-| `https://autonarro.com/app` | SaaS 工作台 |
+| `https://autonarro.com/platform` | SaaS 工作台 |
 | `https://autonarro.com/api/*` | API（需 Key） |
 
 详见 **`docs/DEPLOYMENT_AUTONARRO.md`**、`deploy/nginx.autonarro.com.conf.example`。  
