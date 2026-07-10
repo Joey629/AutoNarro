@@ -33,7 +33,12 @@
       "ratio": 0.75
     },
     {
-      "id": "suspected_delay",
+      "id": "sc_dual_disagreement",
+      "label": "SC 双轨分歧较大（建议人工复核）",
+      "field": "sc_dual_review",
+      "op": "flag_true"
+    },
+    {
       "label": "疑似语言发育迟缓（综合）",
       "requires": ["low_macro_vs_norm", "low_micro"]
     }

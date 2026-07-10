@@ -44,6 +44,12 @@ except ImportError as e:
 import micro_encoder as rfe
 import train_micro_shared as msh
 import train_micro as micro
+from paths import split_cache_path
+
+try:
+    import analyze_bootstrap as aboot
+except ImportError:
+    aboot = None
 
 warnings.filterwarnings("ignore")
 plt.rcParams["font.sans-serif"] = ["Heiti TC", "Arial Unicode MS", "sans-serif"]
@@ -57,7 +63,7 @@ CONFIG = {
         "NARRO_BART_DIR", "models/bart_narro_v4"
     ),
     "split_seed": 42,
-    "split_cache": "data/regression_macro_split_narro_v4_701020_seed42.npz",
+    "split_cache": str(split_cache_path()),
     "cv_folds": 5,
     "target_variables": ["SC_E1", "SC_E2", "SC_E3"],
     "hier_targets": {"SC_E2"},
@@ -78,7 +84,23 @@ CONFIG = {
     "output_dir": os.environ.get(
         "NARRO_MACRO_OUTPUT_DIR", "models/macro_xgb_narro_v4"
     ),
+    "micro_config": os.environ.get("NARRO_MICRO_CONFIG", "configs/micro_narro_v4.json"),
+    "feature_cache": os.environ.get("NARRO_MACRO_FEATURE_CACHE", "").strip() or None,
+    "bundle_cache": (
+        os.environ.get("NARRO_MACRO_BUNDLE_CACHE", "data/macro_sc_dual_bundle.npz").strip()
+        or None
+    ),
 }
+
+
+def _xgb_n_jobs() -> int:
+    """macOS 上 BERT 特征提取后 fork 多进程 XGB 易崩溃，默认单线程。"""
+    v = os.environ.get("NARRO_XGB_N_JOBS", "").strip()
+    if v:
+        return int(v)
+    if os.uname().sysname == "Darwin":
+        return 1
+    return -1
 
 
 def _prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
@@ -97,6 +119,10 @@ def _append_auto_ttr(ling: np.ndarray, base_cols: list[str]) -> tuple[np.ndarray
         ttr = ling[:, ic_dw] / (ling[:, ic_nw] + 1e-9)
     ttr = np.nan_to_num(ttr, nan=0.0, posinf=0.0, neginf=0.0)
     return np.hstack([ling, ttr.reshape(-1, 1)]), list(base_cols) + ["auto_TTR"]
+
+
+def _cv_n_jobs() -> int:
+    return 1 if os.uname().sysname == "Darwin" else 1
 
 
 def _xgb_train_eval_classifier(
@@ -122,14 +148,20 @@ def _xgb_train_eval_classifier(
         subsample=CONFIG["xgb_subsample"],
         colsample_bytree=CONFIG["xgb_colsample_bytree"],
         random_state=CONFIG["split_seed"],
-        n_jobs=-1,
+        n_jobs=_xgb_n_jobs(),
     )
     model = xgb.XGBClassifier(**params)
     cv = KFold(n_splits=CONFIG["cv_folds"], shuffle=True, random_state=CONFIG["split_seed"])
-    cv_acc = cross_val_score(model, X_train, y_train_c, cv=cv, scoring="accuracy")
-    print(
-        f"  {CONFIG['cv_folds']}-fold CV Acc: {cv_acc.mean():.4f} ± {cv_acc.std():.4f}"
-    )
+    if os.environ.get("NARRO_SKIP_XGB_CV", "0") == "1":
+        cv_acc = np.array([np.nan])
+        print("  [CV 跳过] NARRO_SKIP_XGB_CV=1")
+    else:
+        cv_acc = cross_val_score(
+            model, X_train, y_train_c, cv=cv, scoring="accuracy", n_jobs=_cv_n_jobs()
+        )
+        print(
+            f"  {CONFIG['cv_folds']}-fold CV Acc: {cv_acc.mean():.4f} ± {cv_acc.std():.4f}"
+        )
     model.fit(X_train, y_train_c)
     y_pred = model.predict(X_test).astype(int)
     acc = accuracy_score(y_test_c, y_pred)
@@ -177,18 +209,30 @@ def _xgb_train_eval(
         subsample=CONFIG["xgb_subsample"],
         colsample_bytree=CONFIG["xgb_colsample_bytree"],
         random_state=CONFIG["split_seed"],
-        n_jobs=-1,
+        n_jobs=_xgb_n_jobs(),
     )
     model = xgb.XGBRegressor(**params)
     cv = KFold(n_splits=CONFIG["cv_folds"], shuffle=True, random_state=CONFIG["split_seed"])
-    cv_r2 = cross_val_score(model, X_train, y_train, cv=cv, scoring="r2")
-    cv_mse = -cross_val_score(
-        model, X_train, y_train, cv=cv, scoring="neg_mean_squared_error"
-    )
-    print(
-        f"  {CONFIG['cv_folds']}-fold CV  R²: {cv_r2.mean():.4f} ± {cv_r2.std():.4f} | "
-        f"MSE: {cv_mse.mean():.4f} ± {cv_mse.std():.4f}"
-    )
+    if os.environ.get("NARRO_SKIP_XGB_CV", "0") == "1":
+        cv_r2 = np.array([np.nan])
+        cv_mse = np.array([np.nan])
+        print("  [CV 跳过] NARRO_SKIP_XGB_CV=1")
+    else:
+        cv_r2 = cross_val_score(
+            model, X_train, y_train, cv=cv, scoring="r2", n_jobs=_cv_n_jobs()
+        )
+        cv_mse = -cross_val_score(
+            model,
+            X_train,
+            y_train,
+            cv=cv,
+            scoring="neg_mean_squared_error",
+            n_jobs=_cv_n_jobs(),
+        )
+        print(
+            f"  {CONFIG['cv_folds']}-fold CV  R²: {cv_r2.mean():.4f} ± {cv_r2.std():.4f} | "
+            f"MSE: {cv_mse.mean():.4f} ± {cv_mse.std():.4f}"
+        )
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     mse = mean_squared_error(y_test, y_pred)
@@ -303,40 +347,89 @@ if __name__ == "__main__":
     )
     dtr = df.iloc[tr].reset_index(drop=True)
     dte = df.iloc[te].reset_index(drop=True)
-
     ckpt = CONFIG["micro_checkpoint"]
-    if not os.path.isfile(ckpt):
-        raise SystemExit(f"❌ 缺少宏观 SS 权重: {ckpt}")
-    bart = BARTCuePredictor(model_dir=CONFIG["bart_model_dir"])
-    dtr["predicted_ist_words"] = [
-        bart.predict_ist_words(str(t)) for t in tqdm(dtr["text"], desc="BART train")
-    ]
-    dte["predicted_ist_words"] = [
-        bart.predict_ist_words(str(t)) for t in tqdm(dte["text"], desc="BART test")
-    ]
 
-    base_cols = CONFIG["automated_linguistic_columns"]
+    bundle_path = CONFIG.get("bundle_cache")
+    if bundle_path and os.path.isfile(bundle_path):
+        print(f"[bundle] 加载完整特征包 {bundle_path}（跳过 BART/BERT）")
+        z = np.load(bundle_path, allow_pickle=True)
+        ft = z["ft"].item()
+        fe = z["fe"].item()
+        bd = int(z["bd"])
+        lt = z["lt"]
+        le = z["le"]
+        auto_names = list(z["auto_names"].tolist())
+        ytr = pd.DataFrame(z["ytr"], columns=targets)
+        yte = pd.DataFrame(z["yte"], columns=targets)
+    else:
+        if not os.path.isfile(ckpt):
+            raise SystemExit(f"❌ 缺少宏观 SS 权重: {ckpt}")
+        bart = BARTCuePredictor(model_dir=CONFIG["bart_model_dir"])
+        dtr["predicted_ist_words"] = [
+            bart.predict_ist_words(str(t)) for t in tqdm(dtr["text"], desc="BART train")
+        ]
+        dte["predicted_ist_words"] = [
+            bart.predict_ist_words(str(t)) for t in tqdm(dte["text"], desc="BART test")
+        ]
 
-    def rv(r):
-        return analyze_automated_features(r["text"], r["predicted_ist_words"])[0]
+        base_cols = CONFIG["automated_linguistic_columns"]
 
-    tqdm.pandas(desc="A+B train")
-    lt = np.array(dtr.progress_apply(rv, axis=1).tolist(), dtype=np.float64)
-    tqdm.pandas(desc="A+B test")
-    le = np.array(dte.progress_apply(rv, axis=1).tolist(), dtype=np.float64)
-    lt, auto_names = _append_auto_ttr(lt, base_cols)
-    le, _ = _append_auto_ttr(le, base_cols)
+        def rv(r):
+            return analyze_automated_features(r["text"], r["predicted_ist_words"])[0]
 
-    tok, bert, dev = rfe.load_micro_encoder(ckpt, CONFIG["model_name"])
-    bd = bert.bert.config.hidden_size
-    ft = rfe.extract_all_micro_features(
-        dtr, bert, tok, dev, "predicted_ist_words", micro.MAX_LENGTH, True, "auto train"
-    )
-    fe = rfe.extract_all_micro_features(
-        dte, bert, tok, dev, "predicted_ist_words", micro.MAX_LENGTH, True, "auto test"
-    )
-    ytr = dtr[targets]
-    yte = dte[targets]
+        tqdm.pandas(desc="A+B train")
+        lt = np.array(dtr.progress_apply(rv, axis=1).tolist(), dtype=np.float64)
+        tqdm.pandas(desc="A+B test")
+        le = np.array(dte.progress_apply(rv, axis=1).tolist(), dtype=np.float64)
+        lt, auto_names = _append_auto_ttr(lt, base_cols)
+        le, _ = _append_auto_ttr(le, base_cols)
+
+        cache_path = CONFIG.get("feature_cache")
+        if cache_path and os.path.isfile(cache_path):
+            print(f"[特征缓存] 加载 BERT 特征 {cache_path}")
+            z = np.load(cache_path, allow_pickle=True)
+            ft = z["ft"].item()
+            fe = z["fe"].item()
+            bd = int(z["bd"])
+        else:
+            micro_cfg = CONFIG.get("micro_config")
+            if aboot is not None and micro_cfg:
+                aboot.apply_micro_encoder_env(aboot.load_micro_training_config(micro_cfg))
+            tok, bert, dev = rfe.load_micro_encoder(
+                ckpt, CONFIG["model_name"], micro_config_path=micro_cfg
+            )
+            bd = bert.bert.config.hidden_size
+            ft = rfe.extract_all_micro_features(
+                dtr, bert, tok, dev, "predicted_ist_words", micro.MAX_LENGTH, True, "auto train"
+            )
+            fe = rfe.extract_all_micro_features(
+                dte, bert, tok, dev, "predicted_ist_words", micro.MAX_LENGTH, True, "auto test"
+            )
+            del bert, tok, dev
+            import gc
+
+            gc.collect()
+            if cache_path:
+                os.makedirs(os.path.dirname(cache_path) or ".", exist_ok=True)
+                np.savez(cache_path, ft=ft, fe=fe, bd=bd)
+                print(f"[特征缓存] 已写入 {cache_path}")
+
+        ytr = dtr[targets]
+        yte = dte[targets]
+        if bundle_path:
+            os.makedirs(os.path.dirname(bundle_path) or ".", exist_ok=True)
+            np.savez(
+                bundle_path,
+                ft=ft,
+                fe=fe,
+                bd=bd,
+                lt=lt,
+                le=le,
+                auto_names=np.array(auto_names, dtype=object),
+                ytr=ytr.to_numpy(),
+                yte=yte.to_numpy(),
+            )
+            print(f"[bundle] 已写入 {bundle_path}")
 
     dual_train = os.environ.get("NARRO_SC_DUAL_TRAIN", "1") == "1"
     if dual_train:

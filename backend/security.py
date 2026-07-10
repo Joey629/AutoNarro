@@ -19,7 +19,7 @@ _BLOCKED_PATH_RE = re.compile(
     re.I,
 )
 
-# 仅允许公开的静态前缀（营销站 + 前端）
+# 仅允许公开的静态前缀（文档/中间件参考；API 鉴权见 auth.py）
 _PUBLIC_PREFIXES = (
     "/static/",
     "/website/",

@@ -290,6 +290,7 @@ class EvaluationService:
         child_name: str = "",
         class_name: str = "",
         source: str = "api",
+        user_id: int = 0,
     ) -> dict[str, Any]:
         from evaluation_store import save_evaluation
 
@@ -316,6 +317,7 @@ class EvaluationService:
             benchmark_source=computed["benchmark_source"],
             elapsed_ms=computed["elapsed_ms"],
             model_version=self._model_version or "",
+            user_id=user_id,
         )
         logger.info(
             "评估完成 id=%s story=%s age=%s ms=%s",
@@ -346,6 +348,7 @@ class EvaluationService:
         source: str = "web_single",
         coach_mode: str = "free",
         dialogue_log: Optional[list] = None,
+        user_id: int = 0,
     ) -> dict[str, Any]:
         """创建记录并后台推理；API 立即返回 evaluation_id。"""
         from evaluation_store import create_pending_evaluation
@@ -367,6 +370,7 @@ class EvaluationService:
             status_message="已创建记录，准备分析…",
             coach_mode=coach_mode or "free",
             dialogue_log=dialogue_log or [],
+            user_id=user_id,
         )
         params = {
             "text": text.strip(),

@@ -39,6 +39,7 @@ def _load_all_evaluations(limit: int = 2000) -> list[dict]:
     out = []
     for r in rows:
         reg = _json.loads(r["regression_json"] or "{}")
+        sc_agreement = reg.get("sc_agreement") or {}
         micro = _json.loads(r["microstructure_json"] or "{}")
         ling = _json.loads(r["linguistic_json"] or "{}") if "linguistic_json" in r.keys() else {}
         failed = [t["id"] for t in micro.get("tasks", []) if not t.get("value")]
@@ -59,6 +60,8 @@ def _load_all_evaluations(limit: int = 2000) -> list[dict]:
                 "age": r["age"],
                 "story_type": r["story_type"],
                 "pred_SC_Sum": reg.get("pred_SC_Sum"),
+                "sc_dual_review": bool(sc_agreement.get("flag_review")),
+                "sc_agreement_message": sc_agreement.get("message"),
                 "micro_sum": micro.get("sum"),
                 "TNW": core.get("TNW"),
                 "MLU": core.get("MLU"),
@@ -66,6 +69,7 @@ def _load_all_evaluations(limit: int = 2000) -> list[dict]:
                 "failed_tasks": failed,
                 "parent_survey": ps,
                 "coach_mode": r["coach_mode"] if "coach_mode" in r.keys() else "free",
+                "user_id": int(r["user_id"]) if "user_id" in r.keys() and r["user_id"] is not None else 0,
             }
         )
     return out
@@ -122,6 +126,8 @@ def compute_alerts(rows: list[dict], norms: dict) -> list[dict]:
                 hit = tnw < norm["TNW"] * rule.get("ratio", 0.7)
             elif op == "below_ratio" and rule.get("field") == "MLU" and mlu and norm.get("MLU"):
                 hit = mlu < norm["MLU"] * rule.get("ratio", 0.75)
+            elif op == "flag_true" and rule.get("field") == "sc_dual_review":
+                hit = bool(row.get("sc_dual_review"))
             if hit:
                 fired[row["id"]].add(rid)
                 alerts_out.append(
@@ -132,7 +138,7 @@ def compute_alerts(rows: list[dict], norms: dict) -> list[dict]:
                         "class_name": row.get("class_name"),
                         "alert_id": rid,
                         "label": rule.get("label", rid),
-                        "severity": "high" if rid in ("suspected_delay", "low_macro_vs_norm") else "medium",
+                        "severity": "high" if rid in ("suspected_delay", "low_macro_vs_norm", "sc_dual_disagreement") else "medium",
                     }
                 )
 
@@ -251,9 +257,19 @@ def list_children(class_name: Optional[str] = None) -> list[dict]:
     return ov.get("children", [])
 
 
-def user_insights(limit: int = 200) -> dict[str, Any]:
-    """家长端：汇总本机全部评估，呈现长期进步与筛查告警。"""
+def user_insights(
+    limit: int = 200,
+    *,
+    user_id: int | None = None,
+    child_id: str | None = None,
+) -> dict[str, Any]:
+    """家长端：汇总评估，呈现长期进步与筛查告警。"""
     rows = _load_all_evaluations(limit=limit)
+    if user_id and user_id > 0:
+        rows = [r for r in rows if int(r.get("user_id") or 0) in (0, user_id)]
+    if child_id:
+        cid = child_id.strip()
+        rows = [r for r in rows if (r.get("child_id") or "").strip() == cid]
     norms = _expert_norms_by_age_story()
     alerts = compute_alerts(rows, norms)
 

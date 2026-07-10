@@ -1,22 +1,18 @@
-function resolveApiBase() {
-  const meta = document.querySelector('meta[name="narro-api-base"]');
-  const fromMeta = meta?.content?.trim();
-  if (fromMeta) return fromMeta.replace(/\/$/, "");
-  const { protocol, hostname, port } = window.location;
-  if (port === "8000" || port === "") return "";
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return `${protocol}//${hostname}:8000`;
-  }
-  return "";
-}
-
-const API = resolveApiBase();
+const { API, SESSION_KEY, apiHeaders, apiAuthHeaders, fetchJson, verifyAuthApiAvailable } =
+  window.NarroAPI || {};
+const {
+  REPORT_UI,
+  storyLabel,
+  rowToRenderPayload,
+  getNarrativeQuality,
+  scoresSuppressed,
+  paintQualityBanner,
+  paintReportSurface,
+} = window.NarroReport || {};
 const $ = (id) => document.getElementById(id);
 
 const PERSONA_KEY = "narro_persona";
 const LAST_EVAL_KEY = "narro_last_evaluation_id";
-
-const STORY_SHORT = { cat: "小猫", dog: "小狗", bird: "小鸟", goat: "小羊", "pn-agent": "个人叙事Agent" };
 
 let currentEvaluationId = null;
 let lastBatchSummaryCsv = null;
@@ -83,7 +79,6 @@ const TAB_TITLES = {
 };
 
 const PROFILE_CACHE_KEY = "narro_family_profile";
-const SESSION_KEY = "narro_session_token";
 const AVATAR_IDS = ["default", "child-boy", "child-girl", "caregiver"];
 let familyProfile = null;
 let currentUser = null;
@@ -98,24 +93,6 @@ function applyPersonaChrome() {
   $("navManager")?.classList.add("hidden");
   $("managerBatchBlock")?.classList.add("hidden");
   refreshLlmStatus();
-}
-
-function apiHeaders(extra = {}) {
-  const h = { "Content-Type": "application/json", ...extra };
-  const key = localStorage.getItem("narro_api_key");
-  if (key) h["X-API-Key"] = key;
-  const session = localStorage.getItem(SESSION_KEY);
-  if (session) h.Authorization = `Bearer ${session}`;
-  return h;
-}
-
-function apiAuthHeaders(extra = {}) {
-  const h = { ...extra };
-  const key = localStorage.getItem("narro_api_key");
-  if (key) h["X-API-Key"] = key;
-  const session = localStorage.getItem(SESSION_KEY);
-  if (session) h.Authorization = `Bearer ${session}`;
-  return h;
 }
 
 function hasSessionToken() {
@@ -227,53 +204,6 @@ async function logoutUser() {
   showAuthGate(true);
   switchAuthTab("login");
   paintSidebarProfile();
-}
-
-async function fetchJson(path, options = {}) {
-  const { headers: extraHeaders, ...rest } = options;
-  const url = `${API}${path}`;
-  const res = await fetch(url, {
-    ...rest,
-    headers: apiHeaders(extraHeaders || {}),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    let detail =
-      typeof data.detail === "string"
-        ? data.detail
-        : Array.isArray(data.detail)
-          ? data.detail.map((x) => x.msg || x).join("; ")
-          : data.detail
-            ? JSON.stringify(data.detail)
-            : "";
-    if (res.status === 404 && path.startsWith("/api/auth/")) {
-      detail =
-        "认证接口未找到。请用项目根目录执行 python run_web.py 并访问 http://127.0.0.1:8000/platform（需重启服务以加载最新代码）。";
-    }
-    throw new Error(detail || `请求失败 (${res.status})`);
-  }
-  return data;
-}
-
-async function verifyAuthApiAvailable() {
-  const ping = async () => {
-    const res = await fetch(`${API}/api/auth/ping`, { method: "GET" });
-    if (!res.ok) return false;
-    const data = await res.json().catch(() => ({}));
-    return data.ok === true;
-  };
-  const health = async () => {
-    const res = await fetch(`${API}/api/health`, { method: "GET" });
-    if (!res.ok) return false;
-    const data = await res.json().catch(() => ({}));
-    return data.auth_api === true || data.features?.auth_api === true;
-  };
-  for (let i = 0; i < 4; i += 1) {
-    if (await ping()) return true;
-    if (await health()) return true;
-    await new Promise((r) => setTimeout(r, 350));
-  }
-  return false;
 }
 
 function getNarrativeText() {
@@ -1753,88 +1683,6 @@ async function startImmersiveSession() {
   }
 }
 
-function getNarrativeQuality(data) {
-  const stored = data?.narrative_quality || data?.linguistics?.narrative_quality;
-  if (stored) return stored;
-  const text = data?.text || "";
-  const core = data?.linguistics?.core || {};
-  return inferLegacyNarrativeQuality(text, core);
-}
-
-/** 旧记录无 narrative_quality 时，与后端规则近似的前端推断 */
-function inferLegacyNarrativeQuality(text, core) {
-  const raw = String(text || "").trim();
-  const chars = raw.replace(/\s+/g, "").length;
-  const tnw = Number(core.TNW) || 0;
-  const tnu = Number(core.TNU) || 0;
-  const tdw = Number(core.TDW) || 0;
-  if (/^(你好|嗨|hello|测试)[。.!！?？\s]*$/i.test(raw) || chars < 10 || tnw < 5) {
-    return {
-      status: "insufficient",
-      message: "无法评估：讲述过短或未形成完整叙事，请结合图卡完整讲述后再试。",
-    };
-  }
-  if (chars < 20 || tnu < 2 || tnw < 8 || tdw < 4) {
-    return {
-      status: "low_quality",
-      message: "讲述偏短，分数仅供参考。",
-    };
-  }
-  return { status: "sufficient", score: null, message: "" };
-}
-
-function paintQualityBanner(q, bannerId) {
-  const el = $(bannerId || "qualityBanner");
-  if (!el) return;
-  if (!q || q.status === "sufficient") {
-    el.classList.add("hidden");
-    el.innerHTML = "";
-    return;
-  }
-  el.classList.remove("hidden");
-  const insufficient = q.status === "insufficient";
-  el.className = `narro-quality-banner ${insufficient ? "narro-quality-insufficient" : "narro-quality-warn"}`;
-  const title = insufficient ? "无法评估" : "质量提示";
-  el.innerHTML = `<p class="narro-quality-title">${title}</p><p class="narro-quality-msg">${escapeHtml(q.message || "")}</p>`;
-}
-
-function scoresSuppressed(q) {
-  return q && q.status === "insufficient";
-}
-
-function dedupeParentSummary(summary, q) {
-  if (!summary || !q || q.status === "sufficient") return summary || "";
-  const msg = (q.message || "").trim();
-  const lines = String(summary)
-    .split("\n")
-    .filter((line) => {
-      const t = line.trim();
-      if (!t) return false;
-      if (msg && t.includes(msg)) return false;
-      if (q.status === "insufficient" && /无法评估|讲述过短|未形成完整叙事/.test(t)) return false;
-      if (q.status === "low_quality" && /讲述偏短|仅供参考/.test(t)) return false;
-      return true;
-    });
-  return lines.join("\n").trim() || summary;
-}
-
-function sanitizeReportForDisplay(report, q) {
-  if (!report || !q || q.status === "sufficient") return report || "";
-  const msg = (q.message || "").replace(/[【】]/g, "").trim();
-  return String(report)
-    .split("\n")
-    .filter((line) => {
-      const t = line.trim();
-      if (!t) return true;
-      if (msg && t.includes(msg)) return false;
-      if (/^【.*(无法评估|讲述偏短|质量提示).+】$/.test(t)) return false;
-      if (/^【质量提示】/.test(t)) return false;
-      return true;
-    })
-    .join("\n")
-    .trim();
-}
-
 async function clearStoryDock() {
   await endImmersiveSession();
   deactivateXiaoleCompanion();
@@ -1853,239 +1701,55 @@ async function clearStoryDock() {
   syncStoryComposerHint();
 }
 
-function formatScEpisode(v) {
-  if (v == null) return null;
-  const n = Number(v);
-  return Number.isInteger(n) || Math.abs(n - Math.round(n)) < 1e-6
-    ? String(Math.round(n))
-    : n.toFixed(2);
-}
-
-function fillScDetail(el, reg) {
-  if (!el) return;
-  el.innerHTML = "";
-  ["pred_SC_E1", "pred_SC_E2", "pred_SC_E3"].forEach((k, i) => {
-    const v = reg[k];
-    if (v == null) return;
-    const li = document.createElement("li");
-    li.textContent = `情节 ${i + 1}: ${formatScEpisode(v)}`;
-    el.appendChild(li);
-  });
-}
-
-function fillScDualTrack(el, reg) {
-  if (!el) return;
-  const main = reg?.sc_main;
-  const direct = reg?.sc_direct;
-  const agr = reg?.sc_agreement || {};
-  if (!main && !direct) {
-    el.innerHTML =
-      '<p class="text-xs text-muted-foreground">双轨对照暂无（需训练 models/macro_sc_main 与 models/macro_sc_direct，或沿用 legacy 回归）</p>';
-    return;
-  }
-  const lines = [];
-  if (main) {
-    lines.push(
-      `<p><strong>轨 A · MAIN</strong> 合计 ${main.sum}（情节 ${main.SC_E1} / ${main.SC_E2} / ${main.SC_E3}）</p>`
-    );
-  }
-  if (direct) {
-    lines.push(
-      `<p><strong>轨 B · 直接 SC</strong> 合计 ${direct.sum}（情节 ${direct.SC_E1} / ${direct.SC_E2} / ${direct.SC_E3}）</p>`
-    );
-  }
-  if (main && direct && agr.delta_sum != null) {
-    lines.push(`<p class="text-xs">Δ总和 = ${agr.delta_sum}</p>`);
-  }
-  if (agr.flag_review) {
-    lines.push(
-      `<p class="text-amber-600 text-xs font-medium">⚠ ${escapeHtml(agr.message || "建议人工复核")}</p>`
-    );
-  } else if (agr.message) {
-    lines.push(`<p class="text-xs text-muted-foreground">${escapeHtml(agr.message)}</p>`);
-  }
-  el.innerHTML = lines.join("");
-}
-
-function fillLingMetrics(el, core, peer) {
-  if (!el) return;
-  const lingKeys = [
-    ["TNW", "总词数"],
-    ["TDW", "不同词数"],
-    ["TNU", "句子数"],
-    ["MLU", "平均句长"],
-    ["TTR", "词型率"],
-  ];
-  el.innerHTML = lingKeys
-    .map(([k, zh]) => {
-      const v = core[k];
-      if (v == null) return "";
-      const disp = k === "MLU" || k === "TTR" ? Number(v).toFixed(k === "TTR" ? 3 : 2) : v;
-      const norm = peer[k] != null ? ` <span class="text-xs text-muted-foreground">常模 ${peer[k]}</span>` : "";
-      return `<li><strong>${zh}</strong> ${disp}${norm}</li>`;
-    })
-    .join("") || "<li class='text-muted-foreground'>—</li>";
-}
-
-function fillLingMetricsDl(el, core, peer) {
-  if (!el) return;
-  const lingKeys = [
-    ["TNW", "总词数"],
-    ["TDW", "不同词数"],
-    ["TNU", "句子数"],
-    ["MLU", "平均句长"],
-    ["TTR", "词型率"],
-  ];
-  const items = lingKeys
-    .map(([k, zh]) => {
-      const v = core[k];
-      if (v == null) return "";
-      const disp = k === "MLU" || k === "TTR" ? Number(v).toFixed(k === "TTR" ? 3 : 2) : v;
-      const norm = peer[k] != null ? `<span class="norm">常模 ${peer[k]}</span>` : "";
-      return `<div><dt>${zh}</dt><dd>${disp}${norm}</dd></div>`;
-    })
-    .join("");
-  el.innerHTML = items || '<div><dt>—</dt><dd>无数据</dd></div>';
-}
-
-function formatScBreakdown(reg) {
-  const parts = [];
-  ["pred_SC_E1", "pred_SC_E2", "pred_SC_E3"].forEach((k, i) => {
-    const v = reg[k];
-    const s = formatScEpisode(v);
-    if (s != null) parts.push(`情节${i + 1} ${s}`);
-  });
-  return parts.join(" · ");
-}
-
-function fillTaskGrid(el, tasks) {
-  if (!el) return;
-  el.innerHTML = "";
-  (tasks || []).forEach((t) => {
-    const cell = document.createElement("div");
-    cell.className = `badge text-center py-2 ${t.value ? "badge-default" : "badge-outline"}`;
-    cell.innerHTML = `<strong class="block">${t.id}</strong><span class="text-[10px] opacity-80">${t.value ? "达标" : "—"} ${(t.probability * 100).toFixed(0)}%</span>`;
-    el.appendChild(cell);
-  });
-}
-
-function fillTaskGridCompact(el, tasks) {
-  if (!el) return;
-  const list = tasks || [];
-  if (!list.length) {
-    el.innerHTML = '<span class="text-sm text-muted-foreground">—</span>';
-    return;
-  }
-  el.innerHTML = list
-    .map((t) => {
-      const pct = (t.probability * 100).toFixed(0);
-      const cls = t.value ? "pass" : "fail";
-      const mark = t.value ? "✓" : "—";
-      const label = window.NarroUI?.ssTaskLabel(t.id) || t.id;
-      return `<span class="record-task-chip ${cls}" title="${escapeHtml(label)} ${pct}%">${escapeHtml(label)} ${mark}</span>`;
-    })
-    .join("");
-}
-
-function rowToRenderPayload(row) {
-  const ling = row.linguistics || {};
-  const nq = row.narrative_quality || ling.narrative_quality || null;
-  return {
-    evaluation_id: row.evaluation_id ?? row.id,
-    status: row.status || "completed",
-    status_message: row.status_message || "",
-    regression: row.regression || {},
-    microstructure: row.microstructure || {},
-    linguistics: ling,
-    narrative_quality: nq,
-    elapsed_ms: row.elapsed_ms ?? 0,
-    parent_summary: row.parent_summary || "",
-    report_text: row.report_text || "",
-    story_type: row.story_type,
-    text: row.text || row.narrative_text || "",
-    parent_survey: row.parent_survey || null,
-    coach_mode: row.coach_mode || "free",
-    dialogue_log: row.dialogue_log || [],
-    has_narrative_audio: !!row.has_narrative_audio,
-  };
-}
-
-let activeEvalPollId = null;
-let activeEvalPollTimer = null;
-
-function stopEvaluationPolling() {
-  if (activeEvalPollTimer) {
-    clearInterval(activeEvalPollTimer);
-    activeEvalPollTimer = null;
-  }
-  activeEvalPollId = null;
-}
-
-function isEvaluationInProgress(status) {
-  return status && status !== "completed" && status !== "failed";
-}
+const {
+  beginEvaluationPolling: _beginEvalPoll,
+  stopEvaluationPolling = () => {},
+  isEvaluationInProgress = (s) => s && s !== "completed" && s !== "failed",
+} = window.NarroEvalStatus || {};
 
 function beginEvaluationPolling(eid, hooks = {}) {
-  stopEvaluationPolling();
-  activeEvalPollId = eid;
-  const maxMs = 30 * 60 * 1000;
-  const start = Date.now();
-
-  const tick = async () => {
-    if (activeEvalPollId !== eid) return;
-    if (Date.now() - start > maxMs) {
-      stopEvaluationPolling();
-      hooks.onFail?.("评估耗时较长，请稍后在「我的记录」中刷新查看");
-      return;
-    }
-    try {
-      const row = await fetchJson(`/api/history/${eid}`);
-      const st = row.status || "completed";
-      hooks.onUpdate?.(row);
+  if (!_beginEvalPoll) return;
+  _beginEvalPoll(eid, {
+    fetchFullRow: (id) => fetchJson(`/api/history/${id}`),
+    onStatus(status) {
       if (
         currentPersona === "user" &&
         String(selectedHistoryEvalId) === String(eid) &&
-        isEvaluationInProgress(st)
+        isEvaluationInProgress(status.status)
       ) {
         if ($("historyEvalProgressMsg")) {
-          $("historyEvalProgressMsg").textContent = row.status_message || "正在分析…";
+          $("historyEvalProgressMsg").textContent = status.status_message || "正在分析…";
         }
       }
-      if (st === "completed") {
-        stopEvaluationPolling();
-        if (
-          currentPersona === "user" &&
-          String(selectedHistoryEvalId) === String(eid)
-        ) {
-          renderHistoryDetail(rowToRenderPayload(row), row);
-          maybePromptParentSurvey(row);
-        }
-        hooks.onDone?.(row);
-        if (currentPersona === "user") {
-          await refreshUserHistoryNav({ highlightEvalId: eid });
-        }
-        return;
+    },
+    onUpdate(payload) {
+      hooks.onUpdate?.(payload);
+    },
+    onDone(row) {
+      if (
+        currentPersona === "user" &&
+        String(selectedHistoryEvalId) === String(eid)
+      ) {
+        window.NarroHistory.renderHistoryDetail(rowToRenderPayload(row), row);
+        maybePromptParentSurvey(row);
       }
-      if (st === "failed") {
-        stopEvaluationPolling();
-        if (
-          currentPersona === "user" &&
-          String(selectedHistoryEvalId) === String(eid)
-        ) {
-          renderHistoryDetail(rowToRenderPayload(row), row);
-        }
-        hooks.onFail?.(row.status_message || "评估失败");
-        if (currentPersona === "user") {
-          await refreshUserHistoryNav({ highlightEvalId: eid });
-        }
+      hooks.onDone?.(row);
+      if (currentPersona === "user") {
+        void window.NarroHistory.refreshUserHistoryNav({ highlightEvalId: eid });
       }
-    } catch {
-      /* 网络抖动时继续轮询 */
-    }
-  };
-
-  tick();
-  activeEvalPollTimer = setInterval(tick, 1500);
+    },
+    onFail(msg, row) {
+      if (
+        row &&
+        currentPersona === "user" &&
+        String(selectedHistoryEvalId) === String(eid)
+      ) {
+        window.NarroHistory.renderHistoryDetail(rowToRenderPayload(row), row);
+        void window.NarroHistory.refreshUserHistoryNav({ highlightEvalId: eid });
+      }
+      hooks.onFail?.(msg);
+    },
+  });
 }
 
 function paintHistoryEvalState(row, data) {
@@ -2109,15 +1773,6 @@ function paintHistoryEvalState(row, data) {
 
 function persistLastEvaluation(id) {
   if (id != null) localStorage.setItem(LAST_EVAL_KEY, String(id));
-}
-
-function storyLabel(storyType) {
-  return STORY_SHORT[storyType] || storyType || "—";
-}
-
-function historyStoryPhrase(storyType) {
-  if (storyType === "pn-agent") return "个人叙事Agent";
-  return `${storyLabel(storyType)}故事`;
 }
 
 function isPnAgentRecord(row) {
@@ -2159,7 +1814,9 @@ function paintPnAgentHistoryUI(row, data) {
   $("historyDetailBlock")?.classList.add("record-report--pn-agent");
   setHistoryAssessmentSectionsVisible(false);
   const label = (row?.record_label || "").trim();
-  const titleText = label || `个人叙事Agent · ${formatHistoryDateShort(row?.created_at)}`;
+  const titleText =
+    label ||
+    `个人叙事Agent · ${window.NarroHistory.formatHistoryDateShort(row?.created_at)}`;
   if ($(REPORT_UI.history.title)) $(REPORT_UI.history.title).textContent = titleText;
   if ($(REPORT_UI.history.evalId)) {
     $(REPORT_UI.history.evalId).textContent = String(data.evaluation_id ?? "—");
@@ -2190,32 +1847,6 @@ function resetPnAgentHistoryUI() {
   narrEl?.classList.remove("record-dialogue-transcript");
   const narrTitle = narrEl?.closest(".record-section")?.querySelector(".record-section-title");
   if (narrTitle) narrTitle.textContent = "讲述原文";
-}
-
-function formatHistoryTableLabel(r, index, total) {
-  const custom = (r.record_label || "").trim();
-  if (custom) return custom;
-  return `第${total - index}次 · ${historyStoryPhrase(r.story_type)} · ${formatHistoryDateShort(r.created_at)}`;
-}
-
-function historyRecordLabelFromDom(evalId) {
-  const tableCell = document.querySelector(
-    `#historyUserBody tr[data-eval-id="${evalId}"] [data-history-label]`
-  );
-  if (tableCell?.textContent?.trim()) return tableCell.textContent.trim();
-  const row = document.querySelector(`.narro-nav-record[data-eval-id="${evalId}"]`);
-  return row?.querySelector(".sidebar-nav-record-title")?.textContent?.trim() || "该记录";
-}
-
-function formatHistoryDateShort(createdAt) {
-  if (!createdAt) return "未知日期";
-  const d = new Date(createdAt.replace("Z", ""));
-  if (Number.isNaN(d.getTime())) return createdAt.slice(0, 10);
-  return `${d.getMonth() + 1}月${d.getDate()}日`;
-}
-
-function formatHistoryItemMeta(r) {
-  return (r.created_at || "").slice(0, 16).replace("T", " ");
 }
 
 function updateHistoryAskNarroBtn() {
@@ -2351,26 +1982,6 @@ function closeNarroChatDrawer() {
   }, 240);
 }
 
-function hideHistoryDetail() {
-  closeNarroChatDrawer();
-  $("historyDetailWrap")?.classList.add("hidden");
-  selectedHistoryEvalId = null;
-  updateHistoryAskNarroBtn();
-  document.querySelectorAll("#historyNavItems .sidebar-nav-record-row").forEach((el) =>
-    el.classList.remove("active")
-  );
-  document.querySelectorAll(".history-row-clickable, .history-row-manager-clickable").forEach((tr) =>
-    tr.classList.remove("history-row-selected")
-  );
-  if (currentPersona === "user") {
-    const hasRows = !!$("historyUserBody")?.querySelector("tr[data-eval-id]");
-    $("historyUserListWrap")?.classList.toggle("hidden", !hasRows);
-    $("historyEmpty")?.classList.toggle("hidden", hasRows);
-  } else {
-    $("historyEmpty")?.classList.remove("hidden");
-  }
-}
-
 function resetHistoryCoachThread() {
   const box = $("historyCoachMessages");
   if (!box) return;
@@ -2380,158 +1991,6 @@ function resetHistoryCoachThread() {
   $("historyCoachHint")?.classList.add("hidden");
   $("historyNarroChatQuick")?.classList.add("hidden");
   updateHistoryNarroCoachChips();
-}
-
-function renderHistoryDetail(data, row) {
-  currentEvaluationId = data.evaluation_id;
-  selectedHistoryEvalId = data.evaluation_id;
-  persistLastEvaluation(data.evaluation_id);
-  paintEvaluationUI(data, row, "history");
-  void paintHistoryNarrativeAudio(row, data);
-  const st = row?.status || data?.status || "completed";
-  setExportEnabled(st === "completed" && !isPnAgentRecord(row));
-  if (st === "completed") refreshLlmStatus();
-  resetHistoryCoachThread();
-
-  $("historyDetailWrap")?.classList.remove("hidden");
-  $("historyEmpty")?.classList.add("hidden");
-  if (currentPersona === "user") $("historyUserListWrap")?.classList.add("hidden");
-  setSidebarActive("history", data.evaluation_id);
-  document.querySelectorAll(".history-row-clickable, .history-row-manager-clickable").forEach((tr) => {
-    tr.classList.toggle("history-row-selected", String(tr.dataset.evalId) === String(data.evaluation_id));
-  });
-  updateHistoryAskNarroBtn();
-  closeNarroChatDrawer();
-  if (currentPersona === "user") {
-    const title = $(REPORT_UI.history.title)?.textContent?.trim();
-    if (title && $("mainSub")) $("mainSub").textContent = title;
-  }
-}
-
-function renderUserHistoryTable(items, { selectedId = null } = {}) {
-  const wrap = $("historyUserListWrap");
-  const tbody = $("historyUserBody");
-  const emptyEl = $("historyEmpty");
-  const detailOpen = !$("historyDetailWrap")?.classList.contains("hidden");
-  if (!tbody) return;
-
-  if (!items.length) {
-    tbody.innerHTML = "";
-    wrap?.classList.add("hidden");
-    if (!detailOpen) emptyEl?.classList.remove("hidden");
-    return;
-  }
-
-  if (!detailOpen) {
-    wrap?.classList.remove("hidden");
-    emptyEl?.classList.add("hidden");
-  }
-
-  const total = items.length;
-  tbody.innerHTML = items
-    .map((r, index) => {
-      const selected = selectedId != null && String(r.id) === String(selectedId);
-      const label = formatHistoryTableLabel(r, index, total);
-      const type = historyStoryPhrase(r.story_type);
-      const date = formatHistoryDateShort(r.created_at);
-      const score =
-        r.story_type === "pn-agent"
-          ? r.elapsed_ms
-            ? `${Math.round(Number(r.elapsed_ms) / 1000)}秒`
-            : "通话"
-          : r.micro_sum != null
-            ? `${r.micro_sum}/15`
-            : "—";
-      const status = isEvaluationInProgress(r.status)
-        ? '<span class="history-status-pending">分析中</span>'
-        : '<span class="history-status-done">完成</span>';
-      return `<tr class="history-row-clickable${selected ? " history-row-selected" : ""}" data-eval-id="${r.id}">
-        <td class="font-mono text-xs text-muted-foreground">#${r.id}</td>
-        <td class="font-medium" data-history-label>${escapeHtml(label)}</td>
-        <td>${escapeHtml(type)}</td>
-        <td class="whitespace-nowrap">${escapeHtml(date)}</td>
-        <td class="tabular-nums">${score}</td>
-        <td>${status}</td>
-        <td class="whitespace-nowrap">
-          <button type="button" class="btn-outline btn-sm" data-view-eval="${r.id}">查看</button>
-          <button type="button" class="btn-ghost btn-sm" data-history-table-rename="${r.id}">重命名</button>
-          <button type="button" class="btn-ghost btn-sm text-destructive" data-history-table-delete="${r.id}">删除</button>
-        </td>
-      </tr>`;
-    })
-    .join("");
-}
-
-function bindUserHistoryTableEvents() {
-  const tbody = $("historyUserBody");
-  if (!tbody || tbody.dataset.bound === "1") return;
-  tbody.dataset.bound = "1";
-
-  tbody.addEventListener("click", (e) => {
-    const renameBtn = e.target.closest("[data-history-table-rename]");
-    if (renameBtn?.dataset.historyTableRename) {
-      e.stopPropagation();
-      void renameHistoryRecord(renameBtn.dataset.historyTableRename);
-      return;
-    }
-    const deleteBtn = e.target.closest("[data-history-table-delete]");
-    if (deleteBtn?.dataset.historyTableDelete) {
-      e.stopPropagation();
-      void deleteHistoryRecord(deleteBtn.dataset.historyTableDelete);
-      return;
-    }
-    const viewBtn = e.target.closest("[data-view-eval]");
-    if (viewBtn?.dataset.viewEval) {
-      e.stopPropagation();
-      void openEvaluation(viewBtn.dataset.viewEval);
-      return;
-    }
-    const row = e.target.closest("tr.history-row-clickable[data-eval-id]");
-    if (row?.dataset.evalId) void openEvaluation(row.dataset.evalId);
-  });
-}
-
-function renderHistorySidebarNav(items, { selectedId = null } = {}) {
-  const container = $("historyNavItems");
-  if (!container) return;
-  if (currentPersona === "user") {
-    container.innerHTML = "";
-    return;
-  }
-  applyHistoryNavExpanded(historyNavExpanded);
-  if (!items.length) {
-    container.innerHTML = '<span class="sidebar-nav-empty">暂无记录</span>';
-    return;
-  }
-  const total = items.length;
-  container.innerHTML = items
-    .map((r, index) => {
-      const active = selectedId != null && String(r.id) === String(selectedId);
-      const label =
-        (r.record_label || "").trim() ||
-        `第${total - index}次 · ${historyStoryPhrase(r.story_type)} · ${formatHistoryDateShort(r.created_at)}`;
-      const hint =
-        r.story_type === "pn-agent"
-          ? "个人叙事Agent通话"
-          : r.pred_SC_Sum != null
-            ? `宏观 SC ${Number(r.pred_SC_Sum).toFixed(1)} · SS ${r.micro_sum ?? "—"}/15`
-            : "";
-      const tip = hint ? `${label} · ${hint}` : label;
-      const pendingTag = isEvaluationInProgress(r.status)
-        ? '<span class="sidebar-nav-record-pending">分析中</span>'
-        : "";
-      return `<div class="sidebar-nav-record-row narro-nav-record${active ? " active" : ""}" data-eval-id="${r.id}">
-        <button type="button" class="sidebar-nav-item sidebar-nav-item-record" data-eval-id="${r.id}" title="${escapeHtml(tip)}">
-          <span class="sidebar-nav-record-title">${escapeHtml(label)}</span>${pendingTag}
-        </button>
-        <button type="button" class="sidebar-nav-kebab" aria-label="更多操作" data-eval-id="${r.id}">⋮</button>
-        <div class="sidebar-nav-menu hidden" role="menu">
-          <button type="button" role="menuitem" data-history-menu-action="rename">重命名</button>
-          <button type="button" role="menuitem" class="text-destructive" data-history-menu-action="delete">删除</button>
-        </div>
-      </div>`;
-    })
-    .join("");
 }
 
 let narroDialogResolve = null;
@@ -2745,167 +2204,6 @@ function openNarroAlert(message, { title = "提示", confirmLabel = "知道了" 
   });
 }
 
-function historyRecordLabel(evalId) {
-  return historyRecordLabelFromDom(evalId);
-}
-
-async function applyHistoryRecordRenamed(evalId, label) {
-  await refreshUserHistoryNav({ highlightEvalId: evalId });
-  const labelCell = document.querySelector(
-    `#historyUserBody tr[data-eval-id="${evalId}"] [data-history-label]`
-  );
-  if (labelCell) labelCell.textContent = label;
-  setSidebarActive(null, evalId);
-  if (
-    String(selectedHistoryEvalId) === String(evalId) ||
-    String(currentEvaluationId) === String(evalId)
-  ) {
-    if ($("mainSub")) $("mainSub").textContent = label;
-    if ($("historyTitle")) $("historyTitle").textContent = label;
-  }
-}
-
-async function applyHistoryRecordDeleted(evalId) {
-  const wasViewing =
-    String(selectedHistoryEvalId) === String(evalId) ||
-    String(currentEvaluationId) === String(evalId);
-
-  if (String(currentEvaluationId) === String(evalId)) {
-    currentEvaluationId = null;
-    setExportEnabled(false);
-  }
-  if (localStorage.getItem(LAST_EVAL_KEY) === String(evalId)) {
-    localStorage.removeItem(LAST_EVAL_KEY);
-  }
-
-  const items = await refreshUserHistoryNav();
-  if (wasViewing && $("panel-history")?.classList.contains("active")) {
-    const nextId = items?.[0]?.id;
-    if (nextId) {
-      await openEvaluation(nextId, { silent: true });
-    } else {
-      hideHistoryDetail();
-    }
-  } else if (String(selectedHistoryEvalId) === String(evalId)) {
-    hideHistoryDetail();
-  }
-
-  if ($("panel-insights")?.classList.contains("active")) loadInsights();
-}
-
-async function renameHistoryRecord(evalId) {
-  const eid = parseInt(String(evalId), 10);
-  if (!eid) return;
-  const current = historyRecordLabel(evalId);
-
-  await openNarroDialog({
-    title: "重命名记录",
-    message: "为这条记录设置名称",
-    confirmLabel: "保存",
-    input: true,
-    inputValue: current,
-    validate: (v) => (v ? null : "名称不能为空"),
-    onSubmit: async (label) => {
-      await fetchJson(`/api/history/${eid}/rename`, {
-        method: "POST",
-        body: JSON.stringify({ record_label: label }),
-      });
-      await applyHistoryRecordRenamed(eid, label);
-    },
-  });
-}
-
-async function deleteHistoryRecord(evalId) {
-  const eid = parseInt(String(evalId), 10);
-  if (!eid) return;
-  const name = historyRecordLabel(evalId);
-
-  await openNarroDialog({
-    title: "删除记录",
-    message: `确定删除「${name}」？此操作不可恢复。`,
-    confirmLabel: "删除",
-    destructive: true,
-    onSubmit: async () => {
-      await fetchJson(`/api/history/${eid}/delete`, { method: "POST" });
-      await applyHistoryRecordDeleted(eid);
-    },
-  });
-}
-
-/** 与「我的记录」详情一致的报告 UI（session / history 共用） */
-const REPORT_UI = {
-  history: {
-    title: "historyTitle",
-    evalId: "historyEvalId",
-    storyLabel: "historyStoryLabel",
-    elapsed: "historyElapsed",
-    qualityBanner: "historyQualityBanner",
-    microHero: "historyMicroHero",
-    scHero: "historyScHero",
-    scPillWrap: "historyScPillWrap",
-    qualityHint: "historyQualityScoreHint",
-    scBreakdown: "historyScBreakdown",
-    parentSummary: "historyParentSummary",
-    microSum: "historyMicroSum",
-    scSum: "historyScSum",
-    scDetail: "historyScDetail",
-    scDualTrack: "historyScDualTrack",
-    scCardWrap: "historyScCardWrap",
-    lingList: "historyLingMetricsList",
-    taskGrid: "historyTaskGrid",
-    reportText: "historyReportText",
-    narrativeText: "historyNarrativeText",
-  },
-};
-
-function paintReportSurface(data, row, ui, { titleText } = {}) {
-  const reg = data.regression || {};
-  const q = getNarrativeQuality(data);
-  const suppressed = scoresSuppressed(q);
-  const sc = !suppressed && reg.pred_SC_Sum != null ? reg.pred_SC_Sum.toFixed(2) : "—";
-  const microVal = data.microstructure?.sum;
-  const micro = suppressed || microVal == null ? "—" : String(microVal);
-  const core = data.linguistics?.core || {};
-  const peer = data.linguistics?.peer_norms?.averages || {};
-  const tasks = suppressed ? [] : data.microstructure?.tasks || [];
-  const summary = dedupeParentSummary(data.parent_summary || "（暂无摘要）", q);
-  const report = sanitizeReportForDisplay(data.report_text || "", q);
-  const elapsed = `${data.elapsed_ms}ms`;
-  const story = storyLabel(row?.story_type || data.story_type || data.story_label);
-  const qualityHint =
-    q && q.status === "sufficient" && q.score != null
-      ? `叙事质量指数 ${(q.score * 100).toFixed(0)}%（供参考）`
-      : "";
-
-  paintQualityBanner(q, ui.qualityBanner);
-  if ($(ui.title)) $(ui.title).textContent = titleText || `${story}故事`;
-  if ($(ui.evalId)) $(ui.evalId).textContent = String(data.evaluation_id ?? "—");
-  if ($(ui.storyLabel)) $(ui.storyLabel).textContent = story;
-  if ($(ui.elapsed)) $(ui.elapsed).textContent = elapsed;
-  if ($(ui.microHero)) $(ui.microHero).textContent = micro;
-  if ($(ui.scHero)) $(ui.scHero).textContent = sc;
-  if ($(ui.scPillWrap)) $(ui.scPillWrap).classList.toggle("hidden", suppressed);
-  if ($(ui.qualityHint)) $(ui.qualityHint).textContent = qualityHint;
-  if ($(ui.microSum)) $(ui.microSum).textContent = micro;
-  if ($(ui.scSum)) $(ui.scSum).textContent = sc;
-  fillScDetail($(ui.scDetail), reg);
-  fillScDualTrack($(ui.scDualTrack), reg);
-  if ($(ui.scCardWrap)) $(ui.scCardWrap).classList.toggle("opacity-50", suppressed);
-  const br = $(ui.scBreakdown);
-  if (br) {
-    const bd = formatScBreakdown(reg);
-    br.textContent = bd;
-    br.classList.toggle("hidden", !bd || suppressed);
-  }
-  if ($(ui.parentSummary)) $(ui.parentSummary).textContent = summary;
-  fillLingMetrics($(ui.lingList), core, peer);
-  fillTaskGridCompact($(ui.taskGrid), tasks);
-  if ($(ui.reportText)) $(ui.reportText).textContent = report;
-  const narr = row?.text || data.text || "";
-  if ($(ui.narrativeText)) $(ui.narrativeText).textContent = narr;
-  paintParentSurveyBlock(row);
-}
-
 let parentSurveyConfigCache = null;
 let parentSurveyTargetEvalId = null;
 
@@ -3044,6 +2342,10 @@ function maybePromptParentSurvey(row) {
   setTimeout(() => openParentSurveyModal(eid), 400);
 }
 
+async function downloadUrl(path) {
+  await window.NarroUI.downloadWithAuth(API, path);
+}
+
 function paintEvaluationUI(data, row, surface) {
   if (surface === "history") {
     resetPnAgentHistoryUI();
@@ -3055,16 +2357,18 @@ function paintEvaluationUI(data, row, surface) {
     const blocked = paintHistoryEvalState(row, data);
     const label = (row?.record_label || "").trim();
     const story = storyLabel(row?.story_type || data.story_type);
-    const titleText = label || `${story}故事 · ${formatHistoryDateShort(row?.created_at)}`;
+    const titleText =
+      label ||
+      `${story}故事 · ${window.NarroHistory.formatHistoryDateShort(row?.created_at)}`;
     if ($(REPORT_UI.history.title)) $(REPORT_UI.history.title).textContent = titleText;
     if ($(REPORT_UI.history.evalId)) {
       $(REPORT_UI.history.evalId).textContent = String(data.evaluation_id ?? "—");
     }
     if ($(REPORT_UI.history.storyLabel)) $(REPORT_UI.history.storyLabel).textContent = story;
-  const narr = row?.text || data.text || "";
-  if ($(REPORT_UI.history.narrativeText)) $(REPORT_UI.history.narrativeText).textContent = narr;
-  void paintHistoryNarrativeAudio(row, data);
-  if (blocked) {
+    const narr = row?.text || data.text || "";
+    if ($(REPORT_UI.history.narrativeText)) $(REPORT_UI.history.narrativeText).textContent = narr;
+    void paintHistoryNarrativeAudio(row, data);
+    if (blocked) {
       setExportEnabled(false);
       if ((row?.status || data?.status) === "failed") {
         paintQualityBanner(
@@ -3074,68 +2378,64 @@ function paintEvaluationUI(data, row, surface) {
       }
       return;
     }
-    paintReportSurface(data, row, REPORT_UI.history, { titleText });
+    paintReportSurface(data, row, REPORT_UI.history, {
+      titleText,
+      afterPaint: paintParentSurveyBlock,
+    });
     return;
   }
 
   if (surface === "manager") {
-    const reg = data.regression || {};
-    const q = getNarrativeQuality(data);
-    const suppressed = scoresSuppressed(q);
-    const sc = !suppressed && reg.pred_SC_Sum != null ? reg.pred_SC_Sum.toFixed(2) : "—";
-    const microVal = data.microstructure?.sum;
-    const micro = suppressed || microVal == null ? "—" : String(microVal);
-    const core = data.linguistics?.core || {};
-    const peer = data.linguistics?.peer_norms?.averages || {};
-    const summary = data.parent_summary || "（暂无摘要）";
-    const report = data.report_text || "";
-    const elapsed = `${data.elapsed_ms}ms`;
-    const tasks = suppressed ? [] : data.microstructure?.tasks || [];
-    paintQualityBanner(q, "qualityBannerManager");
-    if ($("scSumChip")) $("scSumChip").textContent = suppressed ? "宏观 SC —" : `宏观 SC ${sc}`;
-    if ($("microSumChip")) $("microSumChip").textContent = `SS ${micro}/15`;
-    if ($("elapsedManager")) $("elapsedManager").textContent = elapsed;
-    if ($("parentSummaryManager")) $("parentSummaryManager").textContent = summary;
-    if ($("scSumManager")) $("scSumManager").textContent = sc;
-    fillScDetail($("scDetailManager"), reg);
-    if ($("scCardWrapManager")) $("scCardWrapManager").classList.toggle("opacity-50", suppressed);
-    if ($("microSumManager")) $("microSumManager").textContent = micro;
-    fillLingMetrics($("lingMetricsManager"), core, peer);
-    if ($("reportTextManager")) $("reportTextManager").textContent = report;
-    fillTaskGrid($("taskGridManager"), tasks);
+    paintReportSurface(data, row, REPORT_UI.manager);
   }
 }
 
-async function openEvaluation(id, { silent = false } = {}) {
-  const eid = parseInt(String(id), 10);
-  if (!eid) return;
-  try {
-    const row = await fetchJson(`/api/history/${eid}`);
-    const payload = rowToRenderPayload(row);
+window.NarroHistory.init({
+  fetchJson,
+  LAST_EVAL_KEY,
+  TAB_TITLES,
+  getPersona: () => currentPersona,
+  getCurrentEvaluationId: () => currentEvaluationId,
+  setCurrentEvaluationId: (id) => {
+    currentEvaluationId = id;
+  },
+  getSelectedHistoryEvalId: () => selectedHistoryEvalId,
+  setSelectedHistoryEvalId: (id) => {
+    selectedHistoryEvalId = id;
+  },
+  getHistoryNavExpanded: () => historyNavExpanded,
+  applyHistoryNavExpanded,
+  persistLastEvaluation,
+  paintEvaluationUI,
+  paintHistoryNarrativeAudio,
+  setSidebarActive,
+  beginEvaluationPolling,
+  scrollHistoryDetailIntoView,
+  updateHistoryAskNarroBtn,
+  closeNarroChatDrawer,
+  resetHistoryCoachThread,
+  setExportEnabled,
+  refreshLlmStatus,
+  isPnAgentRecord,
+  openNarroDialog,
+  openNarroAlert,
+  loadInsights,
+  storyStimuliData: () => storyStimuliData,
+  selectStory,
+  renderResults,
+  switchTab,
+  downloadUrl,
+});
 
-    if (currentPersona === "user") {
-      renderHistoryDetail(payload, row);
-      $("historyEmpty")?.classList.add("hidden");
-      if (isEvaluationInProgress(row.status)) {
-        beginEvaluationPolling(eid);
-      }
-      requestAnimationFrame(() => scrollHistoryDetailIntoView());
-      return;
-    }
-
-    if (row.story_type && storyStimuliData?.stories?.[row.story_type]) {
-      selectStory(row.story_type);
-    }
-    renderResults(payload);
-    persistLastEvaluation(eid);
-    if (!$("panel-evaluate")?.classList.contains("active")) {
-      switchTab("evaluate");
-    }
-  } catch (e) {
-    if (!silent) void openNarroAlert(e.message || "无法加载该条记录", { title: "记录" });
-    throw e;
-  }
-}
+const {
+  loadHistory,
+  openEvaluation,
+  hideHistoryDetail,
+  refreshUserHistoryNav,
+  renameHistoryRecord,
+  deleteHistoryRecord,
+  historyRecordLabelFromDom,
+} = window.NarroHistory;
 
 /** 恢复最近一次评估 ID（供「我的记录」中 Narro 对话使用） */
 function syncCoachEvaluationContext() {
@@ -3476,160 +2776,6 @@ $("sampleBtn")?.addEventListener("click", () => {
 });
 
 $("narrativeText")?.addEventListener("input", updateCharCount);
-async function refreshUserHistoryNav({ highlightEvalId = null } = {}) {
-  if (currentPersona !== "user") return;
-  const tbody = $("historyUserBody");
-  const detailOpen = !$("historyDetailWrap")?.classList.contains("hidden");
-  if (tbody && !detailOpen) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-muted-foreground">加载中…</td></tr>`;
-  }
-  try {
-    const { items } = await fetchJson("/api/history?limit=50");
-    const onHistoryTab = $("panel-history")?.classList.contains("active");
-    const selectedId =
-      highlightEvalId ??
-      (onHistoryTab
-        ? selectedHistoryEvalId ||
-          (detailOpen ? currentEvaluationId : null)
-        : null);
-    renderUserHistoryTable(items, { selectedId });
-    renderHistorySidebarNav([], {});
-    return items;
-  } catch (e) {
-    if (tbody && !detailOpen) {
-      tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(e.message || "加载失败")}</td></tr>`;
-    }
-    renderHistorySidebarNav([], {});
-    return [];
-  }
-}
-
-async function loadHistory({ evalId = null } = {}) {
-  const tbody = $("historyBody");
-  const emptyEl = $("historyEmpty");
-  const isUser = currentPersona === "user";
-  const cols = 9;
-  const reopenId =
-    evalId ||
-    selectedHistoryEvalId ||
-    (!$("historyDetailWrap")?.classList.contains("hidden") && currentEvaluationId
-      ? currentEvaluationId
-      : null);
-  if (!reopenId) hideHistoryDetail();
-
-  if (isUser) {
-    bindUserHistoryTableEvents();
-    const tbody = $("historyUserBody");
-    const detailOpen = !$("historyDetailWrap")?.classList.contains("hidden");
-    if (tbody && !detailOpen) {
-      tbody.innerHTML = `<tr><td colspan="7" class="text-muted-foreground">加载中…</td></tr>`;
-    }
-    try {
-      const { items } = await fetchJson("/api/history?limit=50");
-      renderUserHistoryTable(items, { selectedId: reopenId });
-      renderHistorySidebarNav([], {});
-      if (reopenId && items.some((r) => r.id === reopenId || String(r.id) === String(reopenId))) {
-        await openEvaluation(reopenId, { silent: true });
-      } else if (!items.length && !detailOpen) {
-        $("historyUserListWrap")?.classList.add("hidden");
-        emptyEl?.classList.remove("hidden");
-      }
-    } catch (e) {
-      renderHistorySidebarNav([], {});
-      if (tbody && !detailOpen) {
-        tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(e.message || "加载失败")}</td></tr>`;
-      }
-      if (emptyEl) emptyEl.textContent = e.message || "加载失败";
-      if (!detailOpen) emptyEl?.classList.remove("hidden");
-    }
-    return;
-  }
-
-  if (tbody) {
-    tbody.innerHTML = `<tr><td colspan="${cols}" class="text-muted-foreground">加载中…</td></tr>`;
-  }
-
-  try {
-    let q = "?limit=50";
-    const cid = ($("historyChildFilter")?.value || "").trim();
-    if (cid) q += `&child_id=${encodeURIComponent(cid)}`;
-    let { items } = await fetchJson(`/api/history${q}`);
-    const cls = ($("historyClassFilter")?.value || "").trim();
-    if (cls) items = items.filter((r) => (r.class_name || "") === cls);
-
-    if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="${cols}" class="text-muted-foreground">暂无记录</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = items
-      .map(
-        (r) => `<tr class="history-row-manager-clickable" data-eval-id="${r.id}">
-        <td>${r.id}</td>
-        <td>${(r.created_at || "").slice(0, 19).replace("T", " ")}</td>
-        <td>${escapeHtml(r.child_name || r.child_id || "—")}</td>
-        <td>${r.source}</td>
-        <td>${r.story_type}</td>
-        <td>${r.age}</td>
-        <td>${r.pred_SC_Sum != null ? Number(r.pred_SC_Sum).toFixed(2) : "—"}</td>
-        <td>${r.micro_sum ?? "—"}/15</td>
-        <td class="whitespace-nowrap">
-          <button type="button" class="btn-outline btn-sm" data-view-eval="${r.id}">查看</button>
-          <button type="button" class="btn-ghost btn-sm" data-export-txt="${r.id}">TXT</button>
-          <button type="button" class="btn-ghost btn-sm" data-export-csv="${r.id}">CSV</button>
-        </td>
-      </tr>`
-      )
-      .join("");
-    tbody.querySelectorAll("[data-view-eval]").forEach((b) => {
-      b.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openEvaluation(b.dataset.viewEval);
-      });
-    });
-    tbody.querySelectorAll(".history-row-clickable, .history-row-manager-clickable").forEach((tr) => {
-      tr.addEventListener("click", (e) => {
-        if (e.target.closest("button")) return;
-        openEvaluation(tr.dataset.evalId);
-      });
-    });
-    if (reopenId && items.some((r) => r.id === reopenId)) {
-      await openEvaluation(reopenId, { silent: true });
-    }
-    tbody.querySelectorAll("[data-export-txt]").forEach((b) => {
-      b.addEventListener("click", () => downloadUrl(`/api/history/${b.dataset.exportTxt}/export?format=txt`));
-    });
-    tbody.querySelectorAll("[data-export-csv]").forEach((b) => {
-      b.addEventListener("click", () => downloadUrl(`/api/history/${b.dataset.exportCsv}/export?format=csv`));
-    });
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="${cols}">${e.message}</td></tr>`;
-  }
-}
-
-function refreshHistoryClick() {
-  if (currentPersona === "user") {
-    const reopenId =
-      selectedHistoryEvalId ||
-      (!$("historyDetailWrap")?.classList.contains("hidden") ? currentEvaluationId : null);
-    loadHistory({ evalId: reopenId });
-  } else {
-    loadHistory();
-  }
-}
-document.querySelectorAll(".refresh-history-btn").forEach((btn) => {
-  btn.addEventListener("click", refreshHistoryClick);
-});
-$("historyBackToListBtn")?.addEventListener("click", () => {
-  hideHistoryDetail();
-  if ($("mainSub")) $("mainSub").textContent = TAB_TITLES.history?.[1] || "";
-  loadHistory();
-});
-$("historyFilterBtn")?.addEventListener("click", () => loadHistory());
-$("historyClearFilterBtn")?.addEventListener("click", () => {
-  if ($("historyChildFilter")) $("historyChildFilter").value = "";
-  if ($("historyClassFilter")) $("historyClassFilter").value = "";
-  loadHistory();
-});
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));

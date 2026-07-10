@@ -24,6 +24,9 @@ def main() -> int:
     env.setdefault("NARRO_MICRO_CKPT", "models/micro_narro_v4.pth")
     env.setdefault("NARRO_MICRO_MODEL", "Morton-Li/QiDeBERTa-base")
     env.setdefault("NARRO_MICRO_CONFIG", "configs/micro_narro_v4.json")
+    env.setdefault("NARRO_SKIP_XGB_CV", "1")
+    env.setdefault("NARRO_MACRO_FEATURE_CACHE", "data/macro_sc_dual_features.npz")
+    env.setdefault("NARRO_MACRO_BUNDLE_CACHE", "data/macro_sc_dual_bundle.npz")
     env.setdefault("NARRO_SC_DUAL_TRAIN", "1")
     env.setdefault("NARRO_SC_MAIN_DIR", "models/macro_sc_main")
     env.setdefault("NARRO_SC_DIRECT_DIR", "models/macro_sc_direct")
@@ -33,6 +36,7 @@ def main() -> int:
     )
     env.setdefault("NARRO_BART_DIR", "models/bart_narro_v4")
     env.setdefault("NARRO_BART_FORCE_CPU", "1")
+    env.setdefault("REGRESSION_FORCE_CPU", "1")
     env["PYTHONPATH"] = str(ROOT / "src")
 
     ckpt = ROOT / env["NARRO_MICRO_CKPT"]

@@ -14,9 +14,11 @@ from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer
 
 import config_analysis_output_paths as arp
+import analyze_bootstrap as aboot
 import micro_encoder as rfe
 import train_micro_shared as msh
 import train_micro as micro
+from paths import split_cache_path
 
 warnings.filterwarnings("ignore")
 
@@ -26,7 +28,7 @@ CONFIG = {
     "micro_weights": "models/micro_narro_v4.pth",
     "batch_size": 16,
     "eval_split": "micro_test",
-    "split_cache": "regression_macro_split_narro_v4_701020_seed42.npz",
+    "split_cache": str(split_cache_path()),
     "tasks_to_analyze": ["A6", "A11", "A13", "A16"],
     "output_dir": arp.OUTPUT_ANALYZE_MULTITASK_ERRORS,
     "run_manifest_script": "analyze_micro_errors",
@@ -126,13 +128,9 @@ if __name__ == "__main__":
     if not qs:
         raise SystemExit("无有效样本（检查 story_type 是否在 QUESTION_TEMPLATES 中）")
 
-    tokenizer = AutoTokenizer.from_pretrained(CONFIG["model_name"])
-    base = AutoModel.from_pretrained(CONFIG["model_name"])
-    model = msh.ClueAugmentedQAModel(base, use_peft=True)
-    state = msh.load_state_dict_checkpoint(path, map_location=device)
-    model.load_state_dict(state, strict=False)
-    model.to(device)
-    model.eval()
+    aboot.apply_micro_encoder_env()
+    micro_cfg_path = os.environ.get("NARRO_MICRO_CONFIG", "configs/micro_narro_v4.json")
+    tokenizer, model, device = rfe.load_micro_encoder(path, None, device, micro_cfg_path)
 
     all_probs = _predict_in_batches(
         model, tokenizer, device, qs, cs, CONFIG["batch_size"]

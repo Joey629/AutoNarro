@@ -100,7 +100,7 @@ except ImportError:
 # --- 1. 核心组件 (BERT) ---
 # ==============================================================================
 CONFIG = {
-    'model_name': 'hfl/chinese-roberta-wwm-ext',
+    'model_name': 'Morton-Li/QiDeBERTa-base',
     # [新] 我们只使用 'features_automated.py' 能生成的特征
     'automated_linguistic_columns': [
         'auto_TNU', 'auto_MLU', 'auto_TNW', 'auto_TDW', 
@@ -457,8 +457,8 @@ class AutomatedNarrativePredictor:
             report_lines.append(f"   - SC_Sum (总复杂度) 得分: {pred_sc_sum:.2f} (四舍五入: {np.round(pred_sc_sum):.0f})")
         else:
             report_lines.append(
-                "   - [未可用] 请先运行 scripts/train_macro.py 生成 models/macro_xgb_narro_v4/ 下的 joblib；"
-                " 请运行 scripts/train_macro.py 生成宏观 XGB joblib。"
+                "   - [未可用] 请先运行 scripts/train_macro.py 生成 models/macro_sc_main/ 与 models/macro_sc_direct/；"
+                " 或保留 legacy 回退 models/macro_xgb_narro_v4/。"
             )
 
         from benchmark_norms import EXPERT_MACRO_SUM_COL, EXPERT_MICRO_SUM_COL

@@ -49,6 +49,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE evaluations ADD COLUMN dialogue_log_json TEXT DEFAULT ''")
     if "narrative_audio_path" not in cols:
         conn.execute("ALTER TABLE evaluations ADD COLUMN narrative_audio_path TEXT DEFAULT ''")
+    if "user_id" not in cols:
+        conn.execute("ALTER TABLE evaluations ADD COLUMN user_id INTEGER DEFAULT 0")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS expert_overrides (
@@ -225,6 +227,7 @@ def save_evaluation(
     benchmark_source: str,
     elapsed_ms: int,
     model_version: str = "",
+    user_id: int = 0,
 ) -> int:
     from tenant import current_tenant_id
 
@@ -238,8 +241,8 @@ def save_evaluation(
                 created_at, source, text, story_type, task_type, age, left_behind,
                 predicted_ist_words, report_text, regression_json, microstructure_json,
                 linguistic_json, benchmark_source, elapsed_ms, model_version,
-                child_id, child_name, parent_summary, class_name, tenant_id
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                child_id, child_name, parent_summary, class_name, tenant_id, user_id
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 created_at,
@@ -262,6 +265,7 @@ def save_evaluation(
                 parent_summary or "",
                 class_name or "",
                 tenant_id,
+                int(user_id or 0),
             ),
         )
         eid = int(cur.lastrowid)
@@ -278,6 +282,7 @@ def save_pn_agent_session(
     class_name: str = "",
     elapsed_ms: int = 0,
     session: Optional[dict] = None,
+    user_id: int = 0,
 ) -> int:
     """保存 PN agent（小乐陪伴）语音通话记录。"""
     from tenant import current_tenant_id
@@ -299,8 +304,8 @@ def save_pn_agent_session(
                 predicted_ist_words, report_text, regression_json, microstructure_json,
                 linguistic_json, benchmark_source, elapsed_ms, model_version,
                 child_id, child_name, parent_summary, class_name, tenant_id,
-                status, status_message, coach_mode, dialogue_log_json
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                status, status_message, coach_mode, dialogue_log_json, user_id
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 created_at,
@@ -327,6 +332,7 @@ def save_pn_agent_session(
                 "",
                 "pn-agent",
                 json.dumps(cleaned, ensure_ascii=False),
+                int(user_id or 0),
             ),
         )
         eid = int(cur.lastrowid)
@@ -385,6 +391,7 @@ def create_pending_evaluation(
     status_message: str = "已提交，等待分析…",
     coach_mode: str = "free",
     dialogue_log: Optional[list] = None,
+    user_id: int = 0,
 ) -> int:
     """立即创建占位记录，供异步评估写入结果。"""
     from tenant import current_tenant_id
@@ -400,8 +407,8 @@ def create_pending_evaluation(
                 predicted_ist_words, report_text, regression_json, microstructure_json,
                 linguistic_json, benchmark_source, elapsed_ms, model_version,
                 child_id, child_name, parent_summary, class_name, tenant_id,
-                status, status_message, coach_mode, dialogue_log_json
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                status, status_message, coach_mode, dialogue_log_json, user_id
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 created_at,
@@ -428,6 +435,7 @@ def create_pending_evaluation(
                 status_message,
                 (coach_mode or "free")[:32],
                 json.dumps(dialogue_log or [], ensure_ascii=False),
+                int(user_id or 0),
             ),
         )
         eid = int(cur.lastrowid)
@@ -509,6 +517,42 @@ def fail_evaluation(evaluation_id: int, message: str) -> None:
     update_evaluation_status(evaluation_id, "failed", message[:500])
 
 
+def get_evaluation_status(evaluation_id: int) -> Optional[dict]:
+    """轻量状态查询，供前端轮询（避免每次拉取完整 history 记录）。"""
+    from tenant import current_tenant_id
+
+    init_db()
+    tid = current_tenant_id()
+    with sqlite3.connect(_db_path()) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT id, status, status_message, story_type, record_label, created_at,
+                   regression_json, microstructure_json, user_id
+            FROM evaluations
+            WHERE id = ? AND tenant_id = ?
+            """,
+            (evaluation_id, tid),
+        ).fetchone()
+    if not row:
+        return None
+    status = (row["status"] if "status" in row.keys() else None) or "completed"
+    reg = json.loads(row["regression_json"] or "{}")
+    micro = json.loads(row["microstructure_json"] or "{}")
+    return {
+        "evaluation_id": int(row["id"]),
+        "status": status,
+        "status_message": row["status_message"] if "status_message" in row.keys() else "",
+        "story_type": row["story_type"],
+        "record_label": row["record_label"] if "record_label" in row.keys() else "",
+        "created_at": row["created_at"],
+        "pred_SC_Sum": reg.get("pred_SC_Sum"),
+        "micro_sum": micro.get("sum"),
+        "user_id": int(row["user_id"]) if "user_id" in row.keys() and row["user_id"] is not None else 0,
+        "done": status in ("completed", "failed"),
+    }
+
+
 def delete_evaluation(evaluation_id: int) -> bool:
     from tenant import current_tenant_id
 
@@ -557,7 +601,11 @@ def backfill_record_labels() -> None:
             )
 
 
-def list_evaluations(limit: int = 50, child_id: Optional[str] = None) -> list[dict]:
+def list_evaluations(
+    limit: int = 50,
+    child_id: Optional[str] = None,
+    user_id: Optional[int] = None,
+) -> list[dict]:
     from tenant import current_tenant_id
 
     init_db()
@@ -576,6 +624,9 @@ def list_evaluations(limit: int = 50, child_id: Optional[str] = None) -> list[di
         if child_id:
             q += " AND child_id = ?"
             args.append(child_id.strip())
+        if user_id and user_id > 0:
+            q += " AND (user_id = ? OR user_id = 0 OR user_id IS NULL)"
+            args.append(user_id)
         q += " ORDER BY id DESC LIMIT ?"
         args.append(limit)
         rows = conn.execute(q, args).fetchall()
@@ -606,9 +657,9 @@ def list_evaluations(limit: int = 50, child_id: Optional[str] = None) -> list[di
     return out
 
 
-def list_child_timeline(child_id: str, limit: int = 100) -> list[dict]:
+def list_child_timeline(child_id: str, limit: int = 100, user_id: Optional[int] = None) -> list[dict]:
     """同一儿童多次评估（纵向）。"""
-    return list_evaluations(limit=limit, child_id=child_id)
+    return list_evaluations(limit=limit, child_id=child_id, user_id=user_id)
 
 
 def save_expert_override(
@@ -777,6 +828,7 @@ def get_evaluation(evaluation_id: int) -> Optional[dict]:
         "parent_survey": json.loads(row["parent_survey_json"] or "{}")
         if "parent_survey_json" in row.keys() and (row["parent_survey_json"] or "").strip()
         else None,
+        "user_id": int(row["user_id"]) if "user_id" in row.keys() and row["user_id"] is not None else 0,
         "narrative_audio_path": row["narrative_audio_path"]
         if "narrative_audio_path" in row.keys()
         else "",

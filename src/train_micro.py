@@ -102,14 +102,14 @@ SEED = 42
 N_SPLITS = 5
 MAX_LENGTH = 512
 
-MODEL_NAME = "hfl/chinese-roberta-wwm-ext"
+MODEL_NAME = "Morton-Li/QiDeBERTa-base"
 from paths import MODELS_DIR, narratives_csv_path
 
 FILE_PATH = str(narratives_csv_path())
 IST_TASKS = {"A6", "A11", "A16"}
 
 # 论文 §3.3：Question 与 Narrative 为两段式 encoding；语义线索属第三段语义，在 **第二段内**
-# 与叙事正文用 tokenizer 的句间分界衔接（RoBERTa 为 </s>，与 BERT 的 [SEP] 同角色）。
+# 与叙事正文用 tokenizer 的句间分界衔接（QiDeBERTa 等为 </s>，与 BERT 的 [SEP] 同角色）。
 # 不再使用「已知线索：」自然语言前缀，以免与词表/注意力模式不一致。
 # 若曾用旧字符串训练过 .pth，需用本格式 **重新训练 宏观 SS** 后再做宏观回归对齐。
 #
@@ -154,8 +154,8 @@ def _parse_args():
     p = argparse.ArgumentParser(description="宏观 SS 多任务训练（可选 JSON 实验配置）")
     p.add_argument(
         "--config",
-        default=os.environ.get("NARRO_MICRO_CONFIG", "").strip() or None,
-        help="训练 JSON，如 configs/micro_narro_v4.json",
+        default=os.environ.get("NARRO_MICRO_CONFIG", "").strip() or "configs/micro_narro_v4.json",
+        help="训练 JSON，默认 configs/micro_narro_v4.json",
     )
     return p.parse_args()
 

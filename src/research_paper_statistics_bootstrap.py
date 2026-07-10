@@ -52,7 +52,7 @@ from train_micro import QUESTION_TEMPLATES as QUESTION_TEMPLATES_M4
 # 默认路径（与 model_registry narro_v4 / analyze_micro_errors.py 对齐）
 # ---------------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent
-DEFAULT_DATA = ROOT / "narratives.csv"
+DEFAULT_DATA = ROOT.parent / "data" / "narratives.csv"
 # 若 narratives.csv 无 A2–A16，可改用带专家标签的导出（与全量语料行序一致时，划分与主实验一致）
 FALLBACK_LABELED = (
     ROOT
@@ -560,7 +560,7 @@ def main():
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
     parser.add_argument("--micro_weights", type=Path, default=DEFAULT_MICRO_WEIGHTS)
     parser.add_argument("--xgb_dir", type=Path, default=DEFAULT_XGB_DIR)
-    parser.add_argument("--model_name", default="hfl/chinese-roberta-wwm-ext")
+    parser.add_argument("--model_name", default="Morton-Li/QiDeBERTa-base")
     parser.add_argument("--cv_json", type=Path, default=DEFAULT_CV_JSON)
     parser.add_argument("--n_bootstrap", type=int, default=1000)
     parser.add_argument(

@@ -90,3 +90,17 @@ def narratives_csv_path() -> Path:
 
 def split_cache_path(name: str = "regression_macro_split_narro_v4_701020_seed42.npz") -> Path:
     return DATA_DIR / name
+
+
+def resolve_split_cache(cache_path: str | None) -> str | None:
+    """将 split 缓存解析为绝对路径；优先 ``data/``，兼容仓库根目录旧副本。"""
+    if not cache_path:
+        return None
+    p = Path(cache_path)
+    if p.is_file():
+        return str(p.resolve())
+    candidates = [DATA_DIR / p.name, REPO_ROOT / p, REPO_ROOT / p.name]
+    for c in candidates:
+        if c.is_file():
+            return str(c.resolve())
+    return str((DATA_DIR / p.name) if not p.is_absolute() else p)

@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from api.schemas import EvaluateRequest
-from auth import optional_api_key, require_access
+from auth import optional_api_key, require_access, require_admin_key
 from evaluation_service import EvaluationService
 from fastapi import APIRouter, Depends, HTTPException
 from paths import CONFIGS_DIR, load_model_registry, narratives_csv_path
@@ -78,7 +78,7 @@ def list_models(_: None = Depends(require_access)):
 
 
 @router.post("/api/models/reload")
-def reload_models(version: str | None = None, _: None = Depends(require_access)):
+def reload_models(version: str | None = None, _: None = Depends(require_admin_key)):
     try:
         return EvaluationService.get().reload(version=version)
     except Exception as e:

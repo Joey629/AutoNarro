@@ -1483,15 +1483,25 @@ body.persona-user #panel-session.active {
 .history-user-table-shell {
   background: hsl(var(--card));
 }
+#panel-history:has(#historyUserListWrap:not(.hidden)) .history-panel-shell {
+  max-width: 80rem;
+}
 .history-user-table th {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: hsl(var(--muted-foreground));
   white-space: nowrap;
+  padding: 0.875rem 1.125rem;
+  height: auto;
 }
 .history-user-table td {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   vertical-align: middle;
+  padding: 1rem 1.125rem;
+}
+.history-user-table .btn-sm {
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.75rem;
 }
 .history-status-pending {
   display: inline-flex;
@@ -2456,6 +2466,12 @@ body:has(#panel-session.active) .app-page-head .story-toggle--head {
 .app-page-head .story-toggle--head .story-toggle-btn {
   padding: 0.3125rem 0.75rem;
   font-size: 0.8125rem;
+}
+.history-refresh-head {
+  display: none;
+}
+body:has(#panel-history.active) .history-refresh-head.only-user {
+  display: inline-flex;
 }
 .btn-ask-narro {
   flex-shrink: 0;

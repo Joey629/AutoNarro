@@ -228,7 +228,7 @@ def predict_sc_dual(
         direct_ep = predict_episode_scores(
             bundle, bert_global, bert_hier, ling, None, "direct"
         )
-    elif bundle.has_legacy:
+    elif bundle.has_legacy and not bundle.has_main:
         direct_ep = predict_episode_scores(
             bundle, bert_global, bert_hier, ling, None, "legacy"
         )
@@ -249,9 +249,12 @@ def predict_sc_dual(
     main_kind = bundle.main_kind if bundle.has_main else (
         bundle.legacy_kind if bundle.has_legacy else "none"
     )
-    direct_kind = bundle.direct_kind if bundle.has_direct else (
-        "legacy_fallback" if bundle.has_legacy else "none"
-    )
+    if bundle.has_direct:
+        direct_kind = bundle.direct_kind
+    elif bundle.has_legacy and not bundle.has_main:
+        direct_kind = "legacy_fallback"
+    else:
+        direct_kind = "none"
 
     sc_main = pack(main_ep, f"main_{main_kind}")
     sc_direct = pack(direct_ep, f"direct_{direct_kind}")

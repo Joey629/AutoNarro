@@ -6,8 +6,9 @@
 
 示例：
   python run_calibrate_microstructure_thresholds.py \\
-    --checkpoint best_model_20251001-111255_epoch10_macrof1_0.7067.pth \\
-    --data narratives.csv
+    --checkpoint models/micro_narro_v4.pth \\
+    --data data/narratives.csv \\
+    --model_name Morton-Li/QiDeBERTa-base
 """
 from __future__ import annotations
 
@@ -97,8 +98,8 @@ def grid_search_thresholds(
 def main():
     parser = argparse.ArgumentParser(description="微观 多任务阈值：验证子集上网格搜索并写入 .calibration.json")
     parser.add_argument("--checkpoint", type=Path, required=True, help="微观 .pth 权重路径")
-    parser.add_argument("--data", type=Path, default=ROOT / "narratives.csv")
-    parser.add_argument("--model_name", default="hfl/chinese-roberta-wwm-ext")
+    parser.add_argument("--data", type=Path, default=ROOT.parent / "data" / "narratives.csv")
+    parser.add_argument("--model_name", default="Morton-Li/QiDeBERTa-base")
     parser.add_argument("--out_json", type=Path, default=None, help="默认：与 checkpoint 同目录 <stem>.calibration.json")
     parser.add_argument(
         "--held_out_test_size",

@@ -117,14 +117,14 @@ class MicroTrainingConfig:
         return cls(
             id=str(blob.get("id", config_path.stem)),
             label=str(blob.get("label", blob.get("id", ""))),
-            model_name=str(enc.get("model_name", "hfl/chinese-roberta-wwm-ext")),
+            model_name=str(enc.get("model_name", "Morton-Li/QiDeBERTa-base")),
             local_pretrained_path=(
                 _resolve(enc["local_path"])
                 if enc.get("local_path")
                 else None
             ),
-            checkpoint_out=_resolve(out.get("checkpoint", f"models/M4_{config_path.stem}.pth")),
-            cv_prefix=str(out.get("cv_checkpoint_prefix", "M4_cv_fold_")),
+            checkpoint_out=_resolve(out.get("checkpoint", f"models/micro_{config_path.stem}.pth")),
+            cv_prefix=str(out.get("cv_checkpoint_prefix", "micro_cv_fold_")),
             metrics_log=_resolve(out.get("metrics_log", f"data/logs/{config_path.stem}_metrics.json")),
             seed=int(tr.get("seed", 42)),
             n_splits=int(tr.get("n_splits", 5)),

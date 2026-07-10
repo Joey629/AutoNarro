@@ -6,8 +6,9 @@ from pathlib import Path
 
 from api.schemas import CoachRequest, EvaluateRequest
 from auth import require_access
+from evaluation_access import get_evaluation_for_user
 from evaluation_service import EvaluationService
-from evaluation_store import get_evaluation, log_request, save_narrative_audio
+from evaluation_store import log_request, save_narrative_audio
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
@@ -15,7 +16,7 @@ router = APIRouter(tags=["evaluate"])
 
 
 @router.post("/api/evaluate")
-def evaluate(req: EvaluateRequest, _: None = Depends(require_access)):
+def evaluate(req: EvaluateRequest, user: dict = Depends(require_access)):
     t0 = time.time()
     try:
         out = EvaluationService.get().start_evaluation_async(
@@ -30,6 +31,7 @@ def evaluate(req: EvaluateRequest, _: None = Depends(require_access)):
             source="web_single",
             coach_mode=req.coach_mode or "free",
             dialogue_log=req.dialogue_log or [],
+            user_id=int(user.get("id") or 0),
         )
         log_request("/api/evaluate", "POST", 200, "", int((time.time() - t0) * 1000))
         return out
@@ -43,15 +45,24 @@ def evaluate(req: EvaluateRequest, _: None = Depends(require_access)):
         raise HTTPException(status_code=500, detail="评估失败，请稍后重试") from e
 
 
+@router.get("/api/evaluate/{evaluation_id}/status")
+def evaluation_status(evaluation_id: int, user: dict = Depends(require_access)):
+    from evaluation_store import get_evaluation_status
+
+    get_evaluation_for_user(evaluation_id, user)
+    status = get_evaluation_status(evaluation_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="记录不存在")
+    return {"ok": True, **status}
+
+
 @router.post("/api/evaluate/{evaluation_id}/narrative-audio")
 async def upload_narrative_audio(
     evaluation_id: int,
     audio: UploadFile = File(...),
-    _: None = Depends(require_access),
+    user: dict = Depends(require_access),
 ):
-    row = get_evaluation(evaluation_id)
-    if not row:
-        raise HTTPException(status_code=404, detail="记录不存在")
+    get_evaluation_for_user(evaluation_id, user)
     data = await audio.read()
     if not data:
         raise HTTPException(status_code=400, detail="录音为空")
@@ -71,7 +82,7 @@ async def upload_narrative_audio(
 def evaluation_coach(
     evaluation_id: int,
     body: CoachRequest,
-    _: None = Depends(require_access),
+    user: dict = Depends(require_access),
 ):
     from llm_service import coach_after_evaluation, is_llm_available
 
@@ -80,9 +91,7 @@ def evaluation_coach(
             status_code=503,
             detail="未配置 DeepSeek：请设置 DEEPSEEK_API_KEY 并复制 llm_config.json",
         )
-    row = get_evaluation(evaluation_id)
-    if not row:
-        raise HTTPException(status_code=404, detail="记录不存在")
+    row = get_evaluation_for_user(evaluation_id, user)
     try:
         reply = coach_after_evaluation(row, body.question)
         return {"ok": True, "evaluation_id": evaluation_id, "reply": reply}

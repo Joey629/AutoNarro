@@ -2457,6 +2457,12 @@ body:has(#panel-session.active) .app-page-head .story-toggle--head {
   padding: 0.3125rem 0.75rem;
   font-size: 0.8125rem;
 }
+.history-refresh-head {
+  display: none;
+}
+body:has(#panel-history.active) .history-refresh-head.only-user {
+  display: inline-flex;
+}
 .btn-ask-narro {
   flex-shrink: 0;
   display: inline-flex;

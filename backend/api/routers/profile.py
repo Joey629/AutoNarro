@@ -32,5 +32,8 @@ def post_profile(body: FamilyProfileUpdate, user: dict = Depends(require_user)):
 @router.get("/api/insights")
 def insights(user: dict = Depends(require_user)):
     from admin_analytics import user_insights
+    from user_profile_store import get_family_profile_for_user
 
-    return user_insights()
+    profile = get_family_profile_for_user(user["id"])
+    child_id = (profile.get("child_id") or "").strip() or None
+    return user_insights(user_id=user["id"], child_id=child_id)

@@ -30,9 +30,11 @@ from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer
 
 import config_analysis_output_paths as arp
+import analyze_bootstrap as aboot
 import micro_encoder as rfe
 import train_micro_shared as msh
 import train_micro as micro
+from paths import split_cache_path
 from analyze_macro_core import (
     _analyze_age_scatter,
     _analyze_by_category,
@@ -57,7 +59,7 @@ CONFIG = {
     "batch_size": 16,
     # 与 analyze_macro_metadata 的 metadata_subset='test' 一致：默认与宏观回归同源 test 索引
     "eval_split": "micro_test",  # 'all' | 'micro_test' | float in (0,1) 随机 test 比例
-    "split_cache": "regression_macro_split_narro_v4_701020_seed42.npz",
+    "split_cache": str(split_cache_path()),
     "age_column": "age",
     "left_behind_column": "left_behind",
     "narrative_type_column": "task_type",
@@ -596,12 +598,9 @@ def main():
     eval_df = _select_eval_df(df)
     print(f"分析子集 eval_split={CONFIG['eval_split']!r}, n={len(eval_df)}")
 
-    tokenizer = AutoTokenizer.from_pretrained(CONFIG["model_name"])
-    base = AutoModel.from_pretrained(CONFIG["model_name"])
-    model = msh.ClueAugmentedQAModel(base, use_peft=True)
-    model.load_state_dict(msh.load_state_dict_checkpoint(ckpt, map_location=device), strict=False)
-    model.to(device)
-    model.eval()
+    aboot.apply_micro_encoder_env()
+    micro_cfg_path = os.environ.get("NARRO_MICRO_CONFIG", "configs/micro_narro_v4.json")
+    tokenizer, model, device = rfe.load_micro_encoder(ckpt, None, device, micro_cfg_path)
 
     probs, rpos = _run_multitask_inference(eval_df, model, tokenizer, device)
     if probs is None:

@@ -9,16 +9,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-_SRC = os.path.join(_REPO_ROOT, "src")
-_BACKEND = os.path.join(_REPO_ROOT, "backend")
-for p in (_SRC, _BACKEND):
-    if p not in sys.path:
-        sys.path.insert(0, p)
-os.chdir(_REPO_ROOT)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, os.path.join(_REPO_ROOT, "backend"))
 
-from env_loader import load_dotenv
+from bootstrap import bootstrap_repo
 
-load_dotenv()
+bootstrap_repo()
 
 from api.routers import (
     admin,
@@ -77,9 +73,17 @@ async def lifespan(app: FastAPI):
             )
     except Exception:
         pass
+    if os.environ.get("NARRO_PRELOAD_MODELS", "").strip().lower() in ("1", "true", "yes"):
+        try:
+            from evaluation_service import EvaluationService
+
+            EvaluationService.get().load()
+            logger.info("模型已预加载（NARRO_PRELOAD_MODELS=1）")
+        except Exception as e:
+            logger.warning("模型预加载失败: %s", e)
     logger.info("Narro API 启动 tenant=%s", os.environ.get("NARRO_TENANT_ID", "default"))
-    auth_paths = {getattr(r, "path", "") for r in app.routes}
-    if "/api/auth/register" not in auth_paths:
+    auth_ok = "/api/auth/register" in app.openapi().get("paths", {})
+    if not auth_ok:
         logger.error(
             "认证路由未注册：请从项目根目录执行 python run_web.py，并确认 backend/api/routers/auth.py 存在"
         )
@@ -114,7 +118,7 @@ app.include_router(pn_agent.router)
 
 
 def _should_disable_browser_cache(path: str) -> bool:
-    if path in ("/", "/app"):
+    if path in ("/", "/platform", "/app"):
         return True
     if path.startswith("/static/") or path.startswith("/website/"):
         return path.endswith((".css", ".js", ".html", ".map"))

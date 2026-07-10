@@ -144,14 +144,27 @@ def load_micro_encoder(
         if os.environ.get("REGRESSION_FORCE_CPU", "").lower() in ("1", "true", "yes"):
             device = torch.device("cpu")
             print("[regression 宏观 SS 编码器] REGRESSION_FORCE_CPU=1 → 使用 CPU")
-    encoder_path = resolve_encoder_path(model_name)
-    load_kw = encoder_from_pretrained_kwargs(model_name)
+    cfg_path = (micro_config_path or os.environ.get("NARRO_MICRO_CONFIG", "")).strip()
+    local_pretrained = None
+    trust_rc = None
+    if cfg_path:
+        from micro_training_config import MicroTrainingConfig
+
+        mc = MicroTrainingConfig.from_json(cfg_path)
+        local_pretrained = mc.local_pretrained_path
+        trust_rc = mc.trust_remote_code
+        model_name = mc.model_name or model_name
+    encoder_path = resolve_encoder_path(
+        model_name,
+        str(local_pretrained) if local_pretrained else None,
+    )
+    load_kw = encoder_from_pretrained_kwargs(model_name, trust_remote_code=trust_rc)
     tokenizer = AutoTokenizer.from_pretrained(encoder_path, **load_kw)
     sep = getattr(tokenizer, "sep_token", None) or "[SEP]"
     micro.MICRO_IST_INLINE_SEPARATOR = str(sep)
     print(f"[regression 宏观 SS 编码器] {model_name} | IST sep={repr(micro.MICRO_IST_INLINE_SEPARATOR)}")
     base = AutoModel.from_pretrained(encoder_path, **load_kw)
-    lora_kw = _lora_kwargs_from_micro_config(micro_config_path)
+    lora_kw = _lora_kwargs_from_micro_config(cfg_path or micro_config_path)
     model = msh.ClueAugmentedQAModel(base, use_peft=True, **lora_kw)
     # 先 CPU 加载再 .to(device)，避免 MPS 上 PEFT/embedding 出现 placeholder storage 错误
     state = msh.load_state_dict_checkpoint(checkpoint_path, map_location="cpu")
@@ -193,7 +206,7 @@ def extract_all_micro_features(
             oh.append(np.zeros((1, 4 * H), dtype=np.float32))
             om.append(np.zeros((1, Tn), dtype=np.float32))
             continue
-        cls_mat, micro = _forward_cls_and_micro_probs(
+        cls_mat, micro_probs = _forward_cls_and_micro_probs(
             model, tokenizer, qs, cs, device, max_length, compute_micro_prob
         )
         g = cls_mat.mean(axis=0, keepdims=True).astype(np.float32)
@@ -204,7 +217,7 @@ def extract_all_micro_features(
         h = np.concatenate([e1, e2, e3, gg], axis=1).astype(np.float32)
         og.append(g)
         oh.append(h)
-        om.append(micro.reshape(1, -1).astype(np.float32))
+        om.append(micro_probs.reshape(1, -1).astype(np.float32))
 
     return {
         "global": np.concatenate(og, axis=0),
@@ -321,6 +334,10 @@ def load_or_create_macro_split(
     仅位置索引写入 npz，与 ``train_macro_xgb`` 中
     ``df.iloc[tr_idx]`` 用法一致。
     """
+    if cache_path:
+        from paths import resolve_split_cache
+
+        cache_path = resolve_split_cache(cache_path)
     if cache_path and os.path.isfile(cache_path):
         z = np.load(cache_path)
         tr, te = z["train"], z["test"]

@@ -20,9 +20,11 @@ from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
 
 import config_analysis_output_paths as arp
+import analyze_bootstrap as aboot
 import micro_encoder as rfe
 import train_micro_shared as msh
 import train_micro as micro
+from paths import split_cache_path
 
 warnings.filterwarnings("ignore")
 plt.rcParams["font.sans-serif"] = [
@@ -41,9 +43,23 @@ BASE_CONFIG: dict = {
     "model_name": micro.MODEL_NAME,
     "micro_checkpoint": "models/micro_narro_v4.pth",
     "xgb_models_dir": None,
-    "model_prefix": "xgb_model",
+    "model_prefix": "auto_xgb_model",
+    "feature_pipeline": "automated",  # "expert"：CSV 专家语言学列 + ist_words
+    "bart_model_dir": "models/bart_narro_v4",
+    "automated_linguistic_columns": [
+        "auto_TNU",
+        "auto_MLU",
+        "auto_TNW",
+        "auto_TDW",
+        "auto_IS_Per_count",
+        "auto_IS_Phy_count",
+        "auto_IS_Con_count",
+        "auto_IS_Emo_count",
+        "auto_IS_Men_count",
+        "auto_IS_Ling_count",
+    ],
     "use_micro_prob_in_xgb": False,
-    "split_cache": "regression_macro_split_narro_v4_701020_seed42.npz",
+    "split_cache": str(split_cache_path()),
     "split_seed": 42,
     "target_variables": ["SC_E1", "SC_E2", "SC_E3"],
     "hier_targets": {"SC_E2"},
@@ -67,6 +83,31 @@ BASE_CONFIG: dict = {
     "feature_cache_path": None,
     "run_manifest_script": "analyze_macro_core",
 }
+
+
+def _append_auto_ttr(ling: np.ndarray, base_cols: list[str]) -> tuple[np.ndarray, list[str]]:
+    ic_nw = base_cols.index("auto_TNW")
+    ic_dw = base_cols.index("auto_TDW")
+    with np.errstate(divide="ignore", invalid="ignore"):
+        ttr = ling[:, ic_dw] / (ling[:, ic_nw] + 1e-9)
+    ttr = np.nan_to_num(ttr, nan=0.0, posinf=0.0, neginf=0.0)
+    return np.hstack([ling, ttr.reshape(-1, 1)]), list(base_cols) + ["auto_TTR"]
+
+
+def _build_automated_ling_matrix(df_work: pd.DataFrame, cfg: dict) -> np.ndarray:
+    from features_automated import analyze_automated_features
+    from tqdm import tqdm
+
+    base_cols = list(cfg["automated_linguistic_columns"])
+    rows = []
+    for _, row in tqdm(df_work.iterrows(), total=len(df_work), desc="A+B features"):
+        vec, _ = analyze_automated_features(
+            str(row["text"]), str(row.get("predicted_ist_words", "") or "")
+        )
+        rows.append(vec)
+    ling = np.array(rows, dtype=np.float64)
+    ling, _ = _append_auto_ttr(ling, base_cols)
+    return ling
 
 
 def _prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
@@ -331,6 +372,10 @@ def run_macro_analysis(user_config: dict | None = None) -> None:
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     msh.set_seed(cfg["split_seed"])
 
+    micro_cfg = aboot.load_micro_training_config()
+    aboot.apply_micro_encoder_env(micro_cfg)
+    cfg["model_name"] = micro_cfg.model_name
+
     ckpt = cfg["micro_checkpoint"]
     if not os.path.isfile(ckpt):
         raise SystemExit(f"❌ 缺少 微观权重: {ckpt}")
@@ -390,19 +435,44 @@ def run_macro_analysis(user_config: dict | None = None) -> None:
             print(f"[cache] 已加载 {cache_path}")
 
     if not feats_loaded_from_cache:
-        tok, bert, dev = rfe.load_micro_encoder(ckpt, cfg["model_name"])
-        print(f"\n--- BERT 特征 ({desc_bert}, micro_in_XGB={use_micro}) ---")
+        feature_pipeline = str(cfg.get("feature_pipeline", "expert")).lower().strip()
+        ist_col = "ist_words"
+        if feature_pipeline == "automated":
+            import bart_infer  # noqa: F401 — MPS 段错误规避（须在部分后端之前）
+            from bart_infer import BARTCuePredictor
+            from tqdm import tqdm
+
+            bart_dir = cfg.get("bart_model_dir") or "models/bart_narro_v4"
+            print(f"[pipeline] 自动化特征：BART → {bart_dir}")
+            bart = BARTCuePredictor(model_dir=bart_dir)
+            df_work = df_work.copy()
+            df_work["predicted_ist_words"] = [
+                bart.predict_ist_words(str(t))
+                for t in tqdm(df_work["text"], desc="BART test")
+            ]
+            ist_col = "predicted_ist_words"
+            ling_mat = _build_automated_ling_matrix(df_work, cfg)
+        else:
+            ling_mat = df_work[ling_cols].values.astype(np.float64)
+
+        tok, bert, dev = rfe.load_micro_encoder(
+            ckpt,
+            cfg["model_name"],
+            micro_config_path=os.environ.get("NARRO_MICRO_CONFIG", "configs/micro_narro_v4.json"),
+        )
+        print(
+            f"\n--- BERT 特征 ({desc_bert}, ist={ist_col}, micro_in_XGB={use_micro}) ---"
+        )
         feats = rfe.extract_all_micro_features(
             df_work,
             bert,
             tok,
             dev,
-            "ist_words",
+            ist_col,
             micro.MAX_LENGTH,
             True,
             desc_bert,
         )
-        ling_mat = df_work[ling_cols].values.astype(np.float64)
         if cache_path and subset == "test":
             joblib.dump(
                 {

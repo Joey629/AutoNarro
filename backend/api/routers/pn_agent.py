@@ -35,7 +35,7 @@ def pn_agent_chat_endpoint(body: PnAgentChatRequest, _: None = Depends(require_a
 
 
 @router.post("/api/pn-agent/sessions")
-def pn_agent_save_session(body: PnAgentSaveRequest, _: None = Depends(require_access)):
+def pn_agent_save_session(body: PnAgentSaveRequest, user: dict = Depends(require_access)):
     t0 = time.time()
     try:
         age = body.child_age if body.child_age is not None else 5
@@ -47,6 +47,7 @@ def pn_agent_save_session(body: PnAgentSaveRequest, _: None = Depends(require_ac
             class_name=body.class_name,
             elapsed_ms=body.elapsed_ms,
             session=body.session,
+            user_id=int(user.get("id") or 0),
         )
         log_request("/api/pn-agent/sessions", "POST", 200, str(eid), int((time.time() - t0) * 1000))
         return {"ok": True, "evaluation_id": eid}
