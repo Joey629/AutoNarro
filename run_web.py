@@ -14,7 +14,7 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.environ.get("PORT", "8000"))
-    print(f"Narro Web → http://127.0.0.1:{port}")
+    print(f"金声玉叙 → http://127.0.0.1:{port}")
     uvicorn.run(
         "backend.api.main:app",
         host="0.0.0.0",

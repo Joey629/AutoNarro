@@ -5,7 +5,7 @@ import csv
 import io
 
 from api.schemas import ChatRequest, ExpertOverrideRequest, RecordLabelRequest
-from auth import require_access
+from auth import require_user
 from evaluation_access import get_evaluation_for_user, list_filter_user_id
 from evaluation_store import (
     delete_evaluation,
@@ -28,19 +28,19 @@ EXPERT_OVERRIDE_FIELDS = frozenset(
 def history(
     limit: int = 50,
     child_id: str | None = None,
-    user: dict = Depends(require_access),
+    user: dict = Depends(require_user),
 ):
     uid = list_filter_user_id(user)
     return {"items": list_evaluations(limit=min(limit, 200), child_id=child_id, user_id=uid)}
 
 
 @router.get("/api/history/{evaluation_id}")
-def history_detail(evaluation_id: int, user: dict = Depends(require_access)):
+def history_detail(evaluation_id: int, user: dict = Depends(require_user)):
     return get_evaluation_for_user(evaluation_id, user)
 
 
 @router.get("/api/history/{evaluation_id}/narrative-audio")
-def history_narrative_audio(evaluation_id: int, user: dict = Depends(require_access)):
+def history_narrative_audio(evaluation_id: int, user: dict = Depends(require_user)):
     get_evaluation_for_user(evaluation_id, user)
     path = get_narrative_audio_path(evaluation_id)
     if not path:
@@ -75,7 +75,7 @@ def _delete_evaluation_record(evaluation_id: int, user: dict) -> dict:
 def history_rename_patch(
     evaluation_id: int,
     body: RecordLabelRequest,
-    user: dict = Depends(require_access),
+    user: dict = Depends(require_user),
 ):
     return _rename_evaluation(evaluation_id, body.record_label, user)
 
@@ -84,19 +84,19 @@ def history_rename_patch(
 def history_rename_post(
     evaluation_id: int,
     body: RecordLabelRequest,
-    user: dict = Depends(require_access),
+    user: dict = Depends(require_user),
 ):
     """POST 别名：部分反向代理/旧部署对 PATCH 返回 405 时使用。"""
     return _rename_evaluation(evaluation_id, body.record_label, user)
 
 
 @router.delete("/api/history/{evaluation_id}")
-def history_delete_http(evaluation_id: int, user: dict = Depends(require_access)):
+def history_delete_http(evaluation_id: int, user: dict = Depends(require_user)):
     return _delete_evaluation_record(evaluation_id, user)
 
 
 @router.post("/api/history/{evaluation_id}/delete")
-def history_delete_post(evaluation_id: int, user: dict = Depends(require_access)):
+def history_delete_post(evaluation_id: int, user: dict = Depends(require_user)):
     """POST 别名：部分环境对 DELETE 返回 405 时使用。"""
     return _delete_evaluation_record(evaluation_id, user)
 
@@ -105,7 +105,7 @@ def history_delete_post(evaluation_id: int, user: dict = Depends(require_access)
 def export_evaluation(
     evaluation_id: int,
     format: str = "txt",
-    user: dict = Depends(require_access),
+    user: dict = Depends(require_user),
 ):
     row = get_evaluation_for_user(evaluation_id, user)
     if format == "txt":
@@ -153,7 +153,7 @@ def export_evaluation(
 def expert_override(
     evaluation_id: int,
     body: ExpertOverrideRequest,
-    user: dict = Depends(require_access),
+    user: dict = Depends(require_user),
 ):
     if body.field not in EXPERT_OVERRIDE_FIELDS:
         raise HTTPException(status_code=400, detail="不支持的 override 字段")
@@ -175,7 +175,7 @@ def expert_override(
 
 
 @router.post("/api/chat")
-def chat(req: ChatRequest, user: dict = Depends(require_access)):
+def chat(req: ChatRequest, user: dict = Depends(require_user)):
     from llm_service import free_chat, is_llm_available
 
     if not is_llm_available():
@@ -189,7 +189,7 @@ def chat(req: ChatRequest, user: dict = Depends(require_access)):
 
 
 @router.get("/api/children/{child_id}/timeline")
-def child_timeline(child_id: str, limit: int = 100, user: dict = Depends(require_access)):
+def child_timeline(child_id: str, limit: int = 100, user: dict = Depends(require_user)):
     from admin_analytics import child_growth_series
     from evaluation_store import list_child_timeline
 

@@ -111,6 +111,12 @@ class AuthLoginRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=128)
 
 
+class AuthEnterRequest(BaseModel):
+    email: str = Field(..., min_length=1, max_length=128)
+    password: str = Field(..., min_length=1, max_length=128)
+    display_name: str = Field(default="", max_length=64)
+
+
 class AccountUpdateRequest(BaseModel):
     display_name: str | None = Field(default=None, max_length=64)
     avatar_id: str | None = Field(default=None, max_length=32)

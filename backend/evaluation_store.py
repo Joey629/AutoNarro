@@ -625,7 +625,7 @@ def list_evaluations(
             q += " AND child_id = ?"
             args.append(child_id.strip())
         if user_id and user_id > 0:
-            q += " AND (user_id = ? OR user_id = 0 OR user_id IS NULL)"
+            q += " AND user_id = ?"
             args.append(user_id)
         q += " ORDER BY id DESC LIMIT ?"
         args.append(limit)

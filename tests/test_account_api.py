@@ -97,3 +97,35 @@ def test_login_wrong_password(client: TestClient):
         json={"email": "a@b.com", "password": "wrongone"},
     )
     assert res.status_code == 401
+
+
+def test_auth_enter_login_and_register(client: TestClient):
+    email = f"enter-{uuid.uuid4().hex[:8]}@example.com"
+    password = "secretpass"
+
+    created = client.post(
+        "/api/auth/enter",
+        json={"email": email, "password": password, "display_name": "新用户"},
+    )
+    assert created.status_code == 200, created.text
+    body = created.json()
+    assert body["ok"] is True
+    assert body["created"] is True
+    assert body["token"]
+    assert body["user"]["email"] == email
+    assert body["user"]["display_name"] == "新用户"
+
+    login = client.post(
+        "/api/auth/enter",
+        json={"email": email, "password": password, "display_name": "应被忽略"},
+    )
+    assert login.status_code == 200, login.text
+    login_body = login.json()
+    assert login_body["created"] is False
+    assert login_body["user"]["display_name"] == "新用户"
+
+    bad = client.post(
+        "/api/auth/enter",
+        json={"email": email, "password": "wrongpass", "display_name": ""},
+    )
+    assert bad.status_code == 401

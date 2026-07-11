@@ -1,4 +1,4 @@
-const { API, SESSION_KEY, apiHeaders, apiAuthHeaders, fetchJson, verifyAuthApiAvailable } =
+const { API, SESSION_KEY, apiHeaders, apiAuthHeaders, fetchJson, verifyAuthApiAvailable, authEnterOrLegacy } =
   window.NarroAPI || {};
 const {
   REPORT_UI,
@@ -47,14 +47,10 @@ function isSidebarCollapsed() {
 function applySidebarCollapsed(collapsed) {
   sidebarCollapsed = collapsed;
   $("appSidebar")?.classList.toggle("narro-sidebar-collapsed", collapsed);
-  const closeBtn = $("sidebarCollapseBtn");
-  const expandBtn = $("sidebarExpandBtn");
-  if (closeBtn) {
-    closeBtn.setAttribute("aria-expanded", String(!collapsed));
-    closeBtn.hidden = collapsed;
-  }
-  if (expandBtn) {
-    expandBtn.setAttribute("aria-expanded", String(!collapsed));
+  const brandToggle = $("sidebarBrandToggle");
+  if (brandToggle) {
+    brandToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    brandToggle.setAttribute("aria-label", collapsed ? "展开边栏" : "收起边栏");
   }
   localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
 }
@@ -70,12 +66,15 @@ const SAMPLE = {
   left_behind: 0,
 };
 
+const PRODUCT_NAME = "金声玉叙";
+
 const TAB_TITLES = {
   session: ["MAIN评估Agent", "先看完全部图卡，录下孩子的讲述，完成后到「我的记录」查看报告"],
   "pn-agent": ["个人叙事Agent", ""],
   history: ["我的记录", "查看并回溯历次评估结果"],
   insights: ["洞察", "长期进步追踪 · 关注薄弱项与告警"],
-  profile: ["个人信息", "管理看护人与儿童基本信息"],
+  "admin-data": ["平台数据", "所有注册用户与产品使用记录"],
+  profile: ["个人信息", "昵称与儿童基本信息"],
 };
 
 const PROFILE_CACHE_KEY = "narro_family_profile";
@@ -84,15 +83,33 @@ let familyProfile = null;
 let currentUser = null;
 
 const DEFAULT_TAB = "session";
+const ADMIN_DEFAULT_TAB = "admin-data";
+
+function isCurrentUserAdmin() {
+  return !!currentUser?.is_admin;
+}
+
+function usesUserHistoryUI() {
+  return currentPersona === "user" || isCurrentUserAdmin();
+}
 
 function applyPersonaChrome() {
-  currentPersona = "user";
+  const admin = isCurrentUserAdmin();
+  currentPersona = admin ? "admin" : "user";
+  document.body.classList.toggle("persona-admin", admin);
   document.body.classList.remove("persona-manager");
-  document.body.classList.add("persona-user");
+  document.body.classList.toggle("persona-user", !admin);
   $("navUser")?.classList.remove("hidden");
   $("navManager")?.classList.add("hidden");
   $("managerBatchBlock")?.classList.add("hidden");
+  document.querySelectorAll(".only-admin").forEach((el) => {
+    el.classList.toggle("hidden", !admin);
+  });
   refreshLlmStatus();
+}
+
+function defaultTabForUser() {
+  return isCurrentUserAdmin() ? ADMIN_DEFAULT_TAB : DEFAULT_TAB;
 }
 
 function hasSessionToken() {
@@ -142,18 +159,6 @@ function setAuthGateError(msg) {
   }
 }
 
-function switchAuthTab(tab) {
-  const login = tab === "login";
-  $("authLoginForm")?.classList.toggle("hidden", !login);
-  $("authRegisterForm")?.classList.toggle("hidden", login);
-  document.querySelectorAll(".auth-tab").forEach((btn) => {
-    const on = btn.dataset.authTab === tab;
-    btn.classList.toggle("active", on);
-    btn.setAttribute("aria-selected", on ? "true" : "false");
-  });
-  setAuthGateError("");
-}
-
 async function onAuthSuccess(data) {
   if (data?.token) localStorage.setItem(SESSION_KEY, data.token);
   currentUser = data?.user || null;
@@ -161,9 +166,10 @@ async function onAuthSuccess(data) {
   if (familyProfile) localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(familyProfile));
   showAuthGate(false);
   setAuthGateError("");
+  applyPersonaChrome();
   paintSidebarProfile();
   fillProfileForm(familyProfile);
-  switchTab(DEFAULT_TAB);
+  switchTab(defaultTabForUser());
   await refreshUserHistoryNav();
   syncCoachEvaluationContext();
   await refreshLlmStatus();
@@ -177,6 +183,7 @@ async function restoreSession() {
       familyProfile = data.profile || defaultFamilyProfile();
       localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(familyProfile));
       showAuthGate(false);
+      applyPersonaChrome();
       return true;
     } catch {
       localStorage.removeItem(SESSION_KEY);
@@ -201,8 +208,8 @@ async function logoutUser() {
   localStorage.removeItem(SESSION_KEY);
   currentUser = null;
   familyProfile = defaultFamilyProfile();
+  applyPersonaChrome();
   showAuthGate(true);
-  switchAuthTab("login");
   paintSidebarProfile();
 }
 
@@ -278,7 +285,7 @@ function setSidebarActive(name, evalId = null) {
     $("sidebarProfileBtn")?.classList.add("active");
     return;
   }
-  const navRoot = currentPersona === "user" ? "#navUser" : "#navManager";
+  const navRoot = currentPersona === "manager" ? "#navManager" : "#navUser";
   const nav = document.querySelector(`${navRoot} .sidebar-nav-item[data-tab="${name}"]`);
   nav?.classList.add("active");
 }
@@ -317,13 +324,10 @@ function profileDisplayName(profile) {
 
 function profileDisplaySub(profile) {
   const p = profile || defaultFamilyProfile();
-  const bits = ["家庭版"];
   const child = (p.child_name || "").trim();
-  if (child) bits.push(child);
-  if (p.age) bits.push(`${p.age} 岁`);
-  if (p.gender) bits.push(p.gender);
-  if (!child) bits.push("请完善儿童信息");
-  return bits.join(" · ");
+  if (child && p.age) return `${child} · ${p.age} 岁`;
+  if (child) return child;
+  return "请填写儿童信息";
 }
 
 function paintSidebarProfile() {
@@ -352,60 +356,38 @@ function paintSidebarProfile() {
   if (tip) tip.textContent = display;
 }
 
-function syncProfileAvatarUi(avatarId) {
-  const id = AVATAR_IDS.includes(avatarId) ? avatarId : "default";
-  const url = avatarImageUrl(id);
-  const preview = $("profileAvatarPreview");
-  if (preview) preview.src = url;
-  document.querySelectorAll(".profile-avatar-option").forEach((btn) => {
-    btn.classList.toggle("selected", btn.dataset.avatarId === id);
-  });
-}
-
-function fillAccountForm(user) {
-  const u = user || currentUser;
-  const emailEl = $("profileAccountEmail");
-  if (emailEl) {
-    emailEl.textContent = u?.email ? `登录邮箱：${u.email}` : "访客模式（API Key）";
-  }
-  if ($("profileDisplayName")) $("profileDisplayName").value = u?.display_name || "";
-  if ($("profilePhone")) $("profilePhone").value = u?.phone || "";
-  syncProfileAvatarUi(u?.avatar_id || "default");
-  const guest = !u || u.id <= 0;
-  $("profileAccountCard")?.classList.toggle("hidden", guest);
-  $("profilePasswordForm")?.classList.toggle("hidden", guest);
-  $("profileLogoutBtn")?.classList.toggle("hidden", guest);
-}
-
 function fillProfileForm(profile) {
   const p = profile || defaultFamilyProfile();
-  if ($("profileCaregiverName")) $("profileCaregiverName").value = p.caregiver_name || "";
+  const emailEl = $("profileAccountEmail");
+  if (emailEl) {
+    const u = currentUser;
+    emailEl.textContent = u?.email ? `登录邮箱：${u.email}` : "";
+  }
+  if ($("profileDisplayName")) {
+    $("profileDisplayName").value = (currentUser?.display_name || "").trim();
+  }
   if ($("profileChildName")) $("profileChildName").value = p.child_name || "";
   if ($("profileChildId")) $("profileChildId").value = p.child_id || "";
   if ($("profileAge")) $("profileAge").value = String(p.age ?? 5);
-  if ($("profileGender")) $("profileGender").value = p.gender || "";
-  if ($("profileLeftBehind")) $("profileLeftBehind").value = String(p.left_behind ?? 0);
-  if ($("profileClassName")) $("profileClassName").value = p.class_name || "";
-  if ($("profileNotes")) $("profileNotes").value = p.notes || "";
   const at = $("profileUpdatedAt");
   if (at) {
     at.textContent = p.updated_at
       ? `上次保存：${String(p.updated_at).slice(0, 19).replace("T", " ")}`
       : "";
   }
-  fillAccountForm(currentUser);
 }
 
 function readProfileForm() {
+  const existing = familyProfile || defaultFamilyProfile();
   return {
-    caregiver_name: ($("profileCaregiverName")?.value || "").trim(),
+    caregiver_name: "",
     child_name: ($("profileChildName")?.value || "").trim(),
     child_id: ($("profileChildId")?.value || "").trim(),
     age: parseInt($("profileAge")?.value || "5", 10) || 5,
-    gender: ($("profileGender")?.value || "").trim(),
-    left_behind: parseInt($("profileLeftBehind")?.value || "0", 10) ? 1 : 0,
-    class_name: ($("profileClassName")?.value || "").trim(),
-    notes: ($("profileNotes")?.value || "").trim(),
+    gender: existing.gender || "",
+    left_behind: parseInt(String(existing.left_behind ?? 0), 10) ? 1 : 0,
+    class_name: existing.class_name || "",
+    notes: "",
   };
 }
 
@@ -430,10 +412,11 @@ async function loadFamilyProfile() {
 
 async function saveFamilyProfile() {
   const payload = readProfileForm();
+  const displayName = ($("profileDisplayName")?.value || "").trim();
   if (!payload.child_name) {
     const hint = $("profileSaveHint");
     if (hint) {
-      hint.textContent = "请填写儿童姓名或昵称";
+      hint.textContent = "请填写儿童姓名";
       hint.classList.remove("hidden");
       hint.classList.add("text-destructive");
     }
@@ -449,6 +432,13 @@ async function saveFamilyProfile() {
     });
     if (data.user) currentUser = data.user;
     familyProfile = data.profile || payload;
+    if (currentUser && currentUser.id > 0) {
+      const acc = await fetchJson("/api/auth/account", {
+        method: "PATCH",
+        body: JSON.stringify({ display_name: displayName }),
+      });
+      currentUser = acc.user || currentUser;
+    }
     localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(familyProfile));
     paintSidebarProfile();
     fillProfileForm(familyProfile);
@@ -473,60 +463,13 @@ async function saveFamilyProfile() {
   }
 }
 
-async function saveAccountProfile() {
-  if (!currentUser || currentUser.id <= 0) return false;
-  const selected = document.querySelector(".profile-avatar-option.selected");
-  const payload = {
-    display_name: ($("profileDisplayName")?.value || "").trim(),
-    phone: ($("profilePhone")?.value || "").trim(),
-    avatar_id: selected?.dataset.avatarId || currentUser.avatar_id || "default",
-  };
-  const btn = $("profileAccountSaveBtn");
-  if (btn) btn.disabled = true;
-  const hint = $("profileAccountHint");
-  try {
-    const data = await fetchJson("/api/auth/account", {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    });
-    currentUser = data.user || currentUser;
-    paintSidebarProfile();
-    fillAccountForm(currentUser);
-    if (hint) {
-      hint.textContent = "账户信息已保存";
-      hint.classList.remove("hidden", "text-destructive");
-      hint.classList.add("text-primary");
-      setTimeout(() => hint.classList.add("hidden"), 2500);
-    }
-    return true;
-  } catch (e) {
-    if (hint) {
-      hint.textContent = e.message || "保存失败";
-      hint.classList.remove("hidden");
-      hint.classList.add("text-destructive");
-    }
-    return false;
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
 function applyHistoryNavExpanded(expanded) {
   historyNavExpanded = expanded;
-  $("historyNavGroup")?.classList.toggle("history-expanded", expanded);
-  $("historyNavToggle")?.setAttribute("aria-expanded", String(expanded));
-  $("historyNavItems")?.classList.toggle("sidebar-nav-children-collapsed", !expanded);
-  $("historyNavChevron")?.classList.toggle("sidebar-nav-chevron-open", expanded);
+  $("historyNavItems")?.classList.toggle("hidden", !expanded);
 }
 
 function toggleHistoryNavExpanded() {
   applyHistoryNavExpanded(!historyNavExpanded);
-}
-
-/** 侧栏收起时点击「我的记录」：展开侧栏并打开记录列表 */
-async function openHistoryFromCollapsedSidebar() {
-  applySidebarCollapsed(false);
-  switchTab("history");
 }
 
 function switchTab(name, { evalId = null } = {}) {
@@ -540,7 +483,7 @@ function switchTab(name, { evalId = null } = {}) {
     p.classList.toggle("active", p.id === `panel-${name}`);
   });
 
-  const [title, sub] = TAB_TITLES[name] || ["Narro", ""];
+  const [title, sub] = TAB_TITLES[name] || [PRODUCT_NAME, ""];
   if ($("mainTitle")) $("mainTitle").textContent = title;
   if ($("mainSub")) {
     if (name === "history" && evalId != null) {
@@ -559,16 +502,16 @@ function switchTab(name, { evalId = null } = {}) {
   updateHistoryAskNarroBtn();
 
   if (name === "history") {
-    if (currentPersona === "user") loadHistory({ evalId });
-    else loadHistory();
+    loadHistory({ evalId });
   }
   if (name === "insights") loadInsights();
+  if (name === "admin-data") loadAdminData();
+  if (name === "admin") loadAdmin();
   if (name === "pn-agent") window.NarroPnAgent?.onTabShown?.();
   if (prev === "pn-agent" && name !== "pn-agent") window.NarroPnAgent?.onTabHidden?.();
   document.body.classList.toggle("pn-agent-view-active", name === "pn-agent");
   $("storyCards")?.classList.toggle("hidden", name !== "session");
   if (name === "profile") {
-    switchProfileSubTab("account");
     fillProfileForm(familyProfile);
   }
 
@@ -655,73 +598,9 @@ $("sidebarProfileBtn")?.addEventListener("click", () => {
   if (window.matchMedia("(max-width: 767px)").matches) closeMobileSidebar();
 });
 
-function switchProfileSubTab(name) {
-  document.querySelectorAll(".profile-tab-btn[data-profile-tab]").forEach((btn) => {
-    const on = btn.dataset.profileTab === name;
-    btn.classList.toggle("active", on);
-    btn.setAttribute("aria-selected", on ? "true" : "false");
-  });
-  document.querySelectorAll(".profile-tab-panel[data-profile-panel]").forEach((panel) => {
-    const on = panel.dataset.profilePanel === name;
-    panel.classList.toggle("hidden", !on);
-    if (on) panel.removeAttribute("hidden");
-    else panel.setAttribute("hidden", "");
-  });
-}
-
-$("profileTabs")?.addEventListener("click", (e) => {
-  const btn = e.target.closest(".profile-tab-btn[data-profile-tab]");
-  if (btn?.dataset.profileTab) switchProfileSubTab(btn.dataset.profileTab);
-});
-
 $("profileForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   await saveFamilyProfile();
-});
-
-$("profileAccountSaveBtn")?.addEventListener("click", () => saveAccountProfile());
-
-$("profileAvatarGrid")?.addEventListener("click", (e) => {
-  const btn = e.target.closest(".profile-avatar-option");
-  if (!btn) return;
-  document.querySelectorAll(".profile-avatar-option").forEach((el) => el.classList.remove("selected"));
-  btn.classList.add("selected");
-  syncProfileAvatarUi(btn.dataset.avatarId);
-});
-
-$("profilePasswordForm")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const hint = $("profilePasswordHint");
-  const cur = $("profileCurrentPassword")?.value || "";
-  const neu = $("profileNewPassword")?.value || "";
-  if (!cur || neu.length < 8) {
-    if (hint) {
-      hint.textContent = "请填写当前密码，新密码至少 8 位";
-      hint.classList.remove("hidden");
-      hint.classList.add("text-destructive");
-    }
-    return;
-  }
-  try {
-    await fetchJson("/api/auth/change-password", {
-      method: "POST",
-      body: JSON.stringify({ current_password: cur, new_password: neu }),
-    });
-    $("profileCurrentPassword").value = "";
-    $("profileNewPassword").value = "";
-    if (hint) {
-      hint.textContent = "密码已更新";
-      hint.classList.remove("hidden", "text-destructive");
-      hint.classList.add("text-primary");
-      setTimeout(() => hint.classList.add("hidden"), 2500);
-    }
-  } catch (err) {
-    if (hint) {
-      hint.textContent = err.message || "修改失败";
-      hint.classList.remove("hidden");
-      hint.classList.add("text-destructive");
-    }
-  }
 });
 
 $("profileLogoutBtn")?.addEventListener("click", () => logoutUser());
@@ -731,22 +610,15 @@ document.querySelectorAll("[data-parent-survey-dismiss]").forEach((el) => {
 });
 $("parentSurveySubmit")?.addEventListener("click", () => submitParentSurvey());
 
-document.querySelectorAll(".auth-tab").forEach((btn) => {
-  btn.addEventListener("click", () => switchAuthTab(btn.dataset.authTab || "login"));
-});
-
-$("authLoginForm")?.addEventListener("submit", async (e) => {
+$("authForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   setAuthGateError("");
-  const email = ($("authLoginEmail")?.value || "").trim();
-  const password = $("authLoginPassword")?.value || "";
-  const btn = $("authLoginBtn");
+  const email = ($("authEmail")?.value || "").trim();
+  const password = $("authPassword")?.value || "";
+  const btn = $("authSubmitBtn");
   if (btn) btn.disabled = true;
   try {
-    const data = await fetchJson("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
+    const data = await authEnterOrLegacy({ email, password });
     await onAuthSuccess(data);
   } catch (err) {
     setAuthGateError(err.message || "登录失败");
@@ -755,47 +627,14 @@ $("authLoginForm")?.addEventListener("submit", async (e) => {
   }
 });
 
-$("authRegisterForm")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  setAuthGateError("");
-  const password = $("authRegisterPassword")?.value || "";
-  const password2 = $("authRegisterPassword2")?.value || "";
-  if (password !== password2) {
-    setAuthGateError("两次输入的密码不一致");
-    return;
-  }
-  const btn = $("authRegisterBtn");
-  if (btn) btn.disabled = true;
-  try {
-    const data = await fetchJson("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        email: ($("authRegisterEmail")?.value || "").trim(),
-        password,
-        display_name: ($("authRegisterName")?.value || "").trim(),
-      }),
-    });
-    await onAuthSuccess(data);
-  } catch (err) {
-    setAuthGateError(err.message || "注册失败");
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-});
-
 document.addEventListener("click", () => closeHistoryKebabMenus());
 
-$("historyNavToggle")?.addEventListener("click", async (e) => {
+$("historyNavToggle")?.addEventListener("click", (e) => {
   e.stopPropagation();
-  if (isSidebarCollapsed()) {
-    await openHistoryFromCollapsedSidebar();
-    return;
-  }
   switchTab("history");
 });
 
-$("sidebarCollapseBtn")?.addEventListener("click", () => applySidebarCollapsed(true));
-$("sidebarExpandBtn")?.addEventListener("click", () => applySidebarCollapsed(false));
+$("sidebarBrandToggle")?.addEventListener("click", () => toggleSidebarCollapsed());
 
 function closeMobileSidebar() {
   $("appSidebar")?.classList.remove("narro-sidebar-mobile-open");
@@ -1130,27 +969,67 @@ function currentStoryDef() {
   return storyStimuliData?.stories?.[selectedStory] || null;
 }
 
+function maxStorySpreadIndex() {
+  const n = currentStoryDef()?.panels?.length || 0;
+  return Math.max(0, n - 2);
+}
+
 function renderStoryPanel() {
   const def = currentStoryDef();
   const panels = def?.panels || [];
   if (!panels.length) return;
-  if (storyPanelIndex >= panels.length) storyPanelIndex = 0;
-  if (storyPanelIndex < 0) storyPanelIndex = panels.length - 1;
-  const p = panels[storyPanelIndex];
-  if ($("storyPanelImg")) {
-    $("storyPanelImg").onerror = () => {
-      $("storyPanelImg").alt = "图卡加载失败";
+  const maxSpread = maxStorySpreadIndex();
+  if (storyPanelIndex > maxSpread) storyPanelIndex = maxSpread;
+  if (storyPanelIndex < 0) storyPanelIndex = 0;
+
+  const leftIdx = storyPanelIndex;
+  const rightIdx = storyPanelIndex + 1;
+
+  const setPanelImg = (imgEl, panel, pageNum) => {
+    if (!imgEl) return;
+    if (!panel) {
+      imgEl.classList.add("hidden");
+      imgEl.removeAttribute("src");
+      return;
+    }
+    imgEl.classList.remove("hidden");
+    imgEl.onerror = () => {
+      imgEl.alt = "图卡加载失败";
     };
-    $("storyPanelImg").src = p.image;
-    const cap = (p.caption || "").trim();
-    $("storyPanelImg").alt = cap || `故事图卡 ${storyPanelIndex + 1}`;
+    imgEl.src = panel.image;
+    const cap = (panel.caption || "").trim();
+    imgEl.alt = cap || `故事图卡 ${pageNum}`;
+  };
+
+  setPanelImg($("storyPanelImgLeft"), panels[leftIdx], leftIdx + 1);
+  setPanelImg($("storyPanelImgRight"), panels[rightIdx], rightIdx + 1);
+
+  const leftNum = leftIdx + 1;
+  const rightNum = rightIdx + 1;
+  if ($("storyPanelNumberLeft")) $("storyPanelNumberLeft").textContent = String(leftNum);
+  if ($("storyPanelNumberRight")) {
+    if (panels[rightIdx]) {
+      $("storyPanelNumberRight").textContent = String(rightNum);
+      $("storyPanelNumberRight").classList.remove("hidden");
+    } else {
+      $("storyPanelNumberRight").textContent = "";
+      $("storyPanelNumberRight").classList.add("hidden");
+    }
   }
-  if ($("storyPanelIndicator")) $("storyPanelIndicator").textContent = `${storyPanelIndex + 1} / ${panels.length}`;
+  if ($("storyPanelIndicator")) {
+    if (panels.length <= 1) {
+      $("storyPanelIndicator").textContent = "第 1 页，共 1 页";
+    } else if (panels[rightIdx]) {
+      $("storyPanelIndicator").textContent = `第 ${leftNum}–${rightNum} 页，共 ${panels.length} 页`;
+    } else {
+      $("storyPanelIndicator").textContent = `第 ${leftNum} 页，共 ${panels.length} 页`;
+    }
+  }
   if ($("storyPrompt")) {
     $("storyPrompt").textContent = def.task_label || def.title || "";
   }
   if ($("storyPrevBtn")) $("storyPrevBtn").disabled = storyPanelIndex <= 0;
-  if ($("storyNextBtn")) $("storyNextBtn").disabled = storyPanelIndex >= panels.length - 1;
+  if ($("storyNextBtn")) $("storyNextBtn").disabled = storyPanelIndex >= maxSpread;
   if (window.NarroStoryCoach?.shouldHandlePanelRender?.() !== false) {
     window.NarroStoryCoach?.onPanelRendered?.();
   }
@@ -1399,8 +1278,7 @@ async function bootSpeechRecognition() {
 }
 
 window.__narroAdvanceStoryPanel = () => {
-  const n = currentStoryDef()?.panels?.length || 0;
-  if (n && storyPanelIndex < n - 1) {
+  if (storyPanelIndex < maxStorySpreadIndex()) {
     storyPanelIndex += 1;
     renderStoryPanel();
   }
@@ -1853,7 +1731,7 @@ function updateHistoryAskNarroBtn() {
   const btn = $("historyAskNarroBtn");
   if (!btn) return;
   const show =
-    currentPersona === "user" &&
+    usesUserHistoryUI() &&
     $("panel-history")?.classList.contains("active") &&
     !$("historyDetailWrap")?.classList.contains("hidden") &&
     !!currentEvaluationId &&
@@ -1986,7 +1864,7 @@ function resetHistoryCoachThread() {
   const box = $("historyCoachMessages");
   if (!box) return;
   box.innerHTML =
-    '<p class="narro-chat-msg bot text-muted-foreground">你好，我是 Narro。已读取本次评估，可在下方提问。</p>';
+    '<p class="narro-chat-msg bot text-muted-foreground">你好，我是金声玉叙。已读取本次评估，可在下方提问。</p>';
   if ($("historyCoachInput")) $("historyCoachInput").value = "";
   $("historyCoachHint")?.classList.add("hidden");
   $("historyNarroChatQuick")?.classList.add("hidden");
@@ -2395,6 +2273,7 @@ window.NarroHistory.init({
   LAST_EVAL_KEY,
   TAB_TITLES,
   getPersona: () => currentPersona,
+  usesUserHistoryUI,
   getCurrentEvaluationId: () => currentEvaluationId,
   setCurrentEvaluationId: (id) => {
     currentEvaluationId = id;
@@ -2439,7 +2318,7 @@ const {
 
 /** 恢复最近一次评估 ID（供「我的记录」中 Narro 对话使用） */
 function syncCoachEvaluationContext() {
-  if (currentPersona !== "user") return;
+  if (!usesUserHistoryUI()) return;
   const raw = localStorage.getItem(LAST_EVAL_KEY);
   if (!raw) return;
   const eid = parseInt(raw, 10);
@@ -2624,7 +2503,7 @@ async function sendHistoryCoachMessage(presetMsg) {
   if (sendBtn) sendBtn.disabled = true;
   const pending = document.createElement("p");
   pending.className = "narro-chat-msg bot text-muted-foreground";
-  pending.textContent = "Narro 正在思考…";
+  pending.textContent = "金声玉叙正在思考…";
   $("historyCoachMessages")?.appendChild(pending);
 
   try {
@@ -2847,8 +2726,7 @@ $("storyPrevBtn")?.addEventListener("click", () => {
   }
 });
 $("storyNextBtn")?.addEventListener("click", () => {
-  const n = currentStoryDef()?.panels?.length || 0;
-  if (n && storyPanelIndex < n - 1) {
+  if (storyPanelIndex < maxStorySpreadIndex()) {
     storyPanelIndex += 1;
     renderStoryPanel();
   }
@@ -2859,6 +2737,107 @@ $("storyMicStopBtn")?.addEventListener("click", () => void endImmersiveSession()
 $("naroMascot")?.addEventListener("click", onXiaoleMascotClick);
 setXiaoleCompanionVisual("sleep");
 syncStoryComposerHint();
+
+async function loadAdminData() {
+  if (!isCurrentUserAdmin()) return;
+  const summaryEl = $("adminDataSummary");
+  const usersBody = $("adminUsersBody");
+  const recordsBody = $("adminRecordsBody");
+  if (!summaryEl || !usersBody || !recordsBody) return;
+  summaryEl.innerHTML = `<p class="text-muted-foreground">加载中…</p>`;
+  try {
+    const [summary, users, records] = await Promise.all([
+      fetchJson("/api/admin/storage-summary"),
+      fetchJson("/api/admin/users?limit=500"),
+      fetchJson("/api/admin/records?limit=500"),
+    ]);
+    summaryEl.innerHTML = `
+      <p>共 <strong>${summary.users ?? 0}</strong> 个注册用户 ·
+      <strong>${summary.evaluations ?? 0}</strong> 条使用记录 ·
+      <strong>${summary.sessions ?? 0}</strong> 个活跃会话</p>`;
+    const usersItems = users.items || [];
+    usersBody.innerHTML = usersItems.length
+      ? usersItems
+          .map(
+            (u) => `<tr>
+              <td>${u.id}</td>
+              <td>${escapeHtml(u.email || "—")}</td>
+              <td>${escapeHtml(u.display_name || "—")}</td>
+              <td>${escapeHtml(u.child_name || "—")}</td>
+              <td>${escapeHtml(u.child_id || "—")}</td>
+              <td>${u.age ?? "—"}</td>
+              <td>${u.n_evaluations ?? 0}</td>
+              <td class="tabular-nums">${formatAdminDate(u.created_at)}</td>
+              <td class="tabular-nums">${formatAdminDate(u.last_eval_at) || "—"}</td>
+            </tr>`
+          )
+          .join("")
+      : `<tr><td colspan="9" class="text-muted-foreground">暂无注册用户</td></tr>`;
+    const recordsItems = records.items || [];
+    recordsBody.innerHTML = recordsItems.length
+      ? recordsItems
+          .map((r) => {
+            const userLabel = r.user_email || (r.user_id > 0 ? `用户 #${r.user_id}` : "访客");
+            const typeLabel = adminRecordTypeLabel(r);
+            const storyLabel = adminStoryLabel(r.story_type);
+            return `<tr>
+              <td>${r.id}</td>
+              <td>${escapeHtml(userLabel)}</td>
+              <td>${escapeHtml(r.child_name || r.child_id || "—")}</td>
+              <td>${escapeHtml(typeLabel)}</td>
+              <td>${escapeHtml(storyLabel)}</td>
+              <td>${escapeHtml(r.status || "—")}</td>
+              <td class="tabular-nums">${r.pred_SC_Sum != null ? Number(r.pred_SC_Sum).toFixed(1) : "—"}</td>
+              <td class="tabular-nums">${r.micro_sum != null ? r.micro_sum : "—"}</td>
+              <td class="tabular-nums">${formatAdminDate(r.created_at)}</td>
+            </tr>`;
+          })
+          .join("")
+      : `<tr><td colspan="9" class="text-muted-foreground">暂无使用记录</td></tr>`;
+  } catch (e) {
+    summaryEl.innerHTML = `<p class="text-sm text-destructive">${escapeHtml(e.message || "加载失败")}</p>`;
+    usersBody.innerHTML = "";
+    recordsBody.innerHTML = "";
+  }
+}
+
+function switchAdminDataTab(name) {
+  const tab = name === "records" ? "records" : "users";
+  document.querySelectorAll("[data-admin-data-tab]").forEach((btn) => {
+    const active = btn.getAttribute("data-admin-data-tab") === tab;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  document.querySelectorAll("[data-admin-data-panel]").forEach((panel) => {
+    const active = panel.getAttribute("data-admin-data-panel") === tab;
+    panel.classList.toggle("hidden", !active);
+  });
+}
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function formatAdminDate(iso) {
+  const raw = String(iso || "").trim();
+  if (!raw) return "";
+  return raw.replace("T", " ").slice(0, 16);
+}
+
+function adminRecordTypeLabel(row) {
+  if (row?.story_type === "pn-agent" || row?.coach_mode === "pn-agent") return "个人叙事 Agent";
+  if (row?.coach_mode && row.coach_mode !== "free") return `MAIN · ${row.coach_mode}`;
+  return "MAIN 评估";
+}
+
+function adminStoryLabel(storyType) {
+  const map = { cat: "小猫", dog: "小狗", bird: "小鸟", goat: "小羊", "pn-agent": "个人叙事" };
+  return map[storyType] || storyType || "—";
+}
 
 async function loadAdmin() {
   const cls = ($("adminClassFilter")?.value || "").trim();
@@ -2915,6 +2894,10 @@ function drawAdminChart(values) {
 }
 
 $("adminRefreshBtn")?.addEventListener("click", loadAdmin);
+$("adminDataRefreshHeadBtn")?.addEventListener("click", loadAdminData);
+document.querySelectorAll("[data-admin-data-tab]").forEach((btn) => {
+  btn.addEventListener("click", () => switchAdminDataTab(btn.getAttribute("data-admin-data-tab")));
+});
 
 (async () => {
   applySidebarCollapsed(sidebarCollapsed);
@@ -2930,11 +2913,11 @@ $("adminRefreshBtn")?.addEventListener("click", loadAdmin);
   const authed = await restoreSession();
   if (authed) {
     if (!familyProfile) await loadFamilyProfile();
-    else paintSidebarProfile();
-    switchTab(DEFAULT_TAB);
+    else     paintSidebarProfile();
+    switchTab(defaultTabForUser());
     await refreshUserHistoryNav();
   } else {
-    switchAuthTab("login");
+    setAuthGateError("");
   }
   syncCoachEvaluationContext();
   await refreshLlmStatus();

@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="narro-api-base" content="" />
-  <title>语核科技.AI</title>
+  <title>金声玉叙</title>
+  <link rel="icon" href="/static/images/narro-icon.png" type="image/png" />
+  <link rel="shortcut icon" href="/favicon.ico" type="image/png" />
+  <link rel="apple-touch-icon" href="/static/images/narro-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -26,30 +29,15 @@
       <div class="auth-gate-blob auth-gate-blob-4"></div>
     </div>
     <div class="auth-gate-card">
-      <img src="/static/images/narro-logo.png" alt="Narro" class="auth-gate-logo" width="140" height="48" />
-      <h1 class="auth-gate-title">欢迎使用 Narro</h1>
-      <p class="auth-gate-sub">登录后保存儿童档案、评估记录与个人设置</p>
-      <div class="auth-tabs" role="tablist">
-        <button type="button" class="auth-tab active" data-auth-tab="login" role="tab" aria-selected="true">登录</button>
-        <button type="button" class="auth-tab" data-auth-tab="register" role="tab" aria-selected="false">注册</button>
-      </div>
-      <form id="authLoginForm" class="auth-form" autocomplete="on">
-        <label class="text-sm font-medium" for="authLoginEmail">邮箱</label>
-        <input type="email" class="input w-full" id="authLoginEmail" required autocomplete="email" placeholder="you@example.com" />
-        <label class="text-sm font-medium" for="authLoginPassword">密码</label>
-        <input type="password" class="input w-full" id="authLoginPassword" required autocomplete="current-password" minlength="8" placeholder="至少 8 位" />
-        <button type="submit" class="btn-primary w-full" id="authLoginBtn">登录</button>
-      </form>
-      <form id="authRegisterForm" class="auth-form hidden" autocomplete="on">
-        <label class="text-sm font-medium" for="authRegisterName">昵称（可选）</label>
-        <input type="text" class="input w-full" id="authRegisterName" maxlength="64" autocomplete="name" placeholder="如：小明妈妈" />
-        <label class="text-sm font-medium" for="authRegisterEmail">邮箱</label>
-        <input type="email" class="input w-full" id="authRegisterEmail" required autocomplete="email" placeholder="you@example.com" />
-        <label class="text-sm font-medium" for="authRegisterPassword">密码</label>
-        <input type="password" class="input w-full" id="authRegisterPassword" required autocomplete="new-password" minlength="8" placeholder="至少 8 位" />
-        <label class="text-sm font-medium" for="authRegisterPassword2">确认密码</label>
-        <input type="password" class="input w-full" id="authRegisterPassword2" required autocomplete="new-password" minlength="8" />
-        <button type="submit" class="btn-primary w-full" id="authRegisterBtn">注册并登录</button>
+      <img src="/static/images/narro-logo.png" alt="金声玉叙" class="auth-gate-logo" width="140" height="48" />
+      <h1 class="auth-gate-title">欢迎使用金声玉叙</h1>
+      <p class="auth-gate-sub">输入邮箱和密码即可进入；已有账号直接登录，新用户将自动注册</p>
+      <form id="authForm" class="auth-form" autocomplete="on">
+        <label class="text-sm font-medium" for="authEmail">账号</label>
+        <input type="text" class="input w-full" id="authEmail" required autocomplete="username" placeholder="请输入你的邮箱" />
+        <label class="text-sm font-medium" for="authPassword">密码</label>
+        <input type="password" class="input w-full" id="authPassword" required autocomplete="current-password" minlength="6" placeholder="请输入你的密码" />
+        <button type="submit" class="btn-primary w-full" id="authSubmitBtn">继续</button>
       </form>
       <p id="authGateError" class="auth-gate-error hidden" role="alert"></p>
     </div>
@@ -62,10 +50,10 @@
       <div class="app-sidebar-inner">
         <div class="sidebar-header">
           <div class="sidebar-brand-slot">
-            <a href="/" class="narro-brand" id="sidebarBrandLink" aria-label="Narro 首页">
+            <button type="button" class="narro-brand" id="sidebarBrandToggle" aria-label="收起边栏" aria-expanded="true">
               <img
                 src="/static/images/narro-logo.png"
-                alt="Narro"
+                alt="金声玉叙"
                 class="narro-brand-logo narro-brand-logo-full"
                 width="193"
                 height="67"
@@ -78,37 +66,8 @@
                 height="44"
                 aria-hidden="true"
               />
-            </a>
-            <button
-              type="button"
-              class="sidebar-rail-toggle sidebar-rail-toggle--open"
-              id="sidebarExpandBtn"
-              aria-label="打开边栏"
-              title="打开边栏"
-            >
-              <svg class="sidebar-rail-toggle-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <rect x="3.5" y="3.5" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M9 4.5v11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M11.5 10l2.5-2.5v5l-2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span class="sidebar-rail-toggle-tooltip" role="tooltip">打开边栏</span>
             </button>
           </div>
-          <button
-            type="button"
-            class="sidebar-rail-toggle sidebar-rail-toggle--close"
-            id="sidebarCollapseBtn"
-            aria-label="关闭边栏"
-            aria-expanded="true"
-            title="关闭边栏"
-          >
-            <svg class="sidebar-rail-toggle-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <rect x="3.5" y="3.5" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M9 4.5v11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <path d="M8.5 10l-2.5-2.5v5l2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="sidebar-rail-toggle-tooltip" role="tooltip">关闭边栏</span>
-          </button>
         </div>
 
         <nav class="app-sidebar-nav" id="navUser" aria-label="工作台导航">
@@ -129,29 +88,29 @@
             <span class="sidebar-nav-label">个人叙事Agent</span>
             <span class="sidebar-nav-tooltip" role="tooltip">个人叙事Agent</span>
           </button>
-          <div class="sidebar-nav-group narro-history-group history-expanded" id="historyNavGroup">
-            <button type="button" class="sidebar-nav-item sidebar-nav-group-toggle" id="historyNavToggle" data-tab="history" aria-expanded="true" aria-label="我的记录">
-              <svg class="sidebar-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9"/>
-                <circle cx="12" cy="12" r="5"/>
-                <circle cx="12" cy="12" r="1.25"/>
-              </svg>
-              <span class="sidebar-nav-label-row">
-                <span class="sidebar-nav-label">我的记录</span>
-                <span class="sidebar-nav-chevron-hit" aria-hidden="true">
-                  <svg class="sidebar-nav-chevron sidebar-nav-chevron-open" id="historyNavChevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 6l4 4 4-4"/>
-                  </svg>
-                </span>
-              </span>
-              <span class="sidebar-nav-tooltip" role="tooltip">我的记录</span>
-            </button>
-            <div class="sidebar-nav-children" id="historyNavItems" aria-label="评估记录"></div>
-          </div>
+          <button type="button" class="sidebar-nav-item" id="historyNavToggle" data-tab="history" aria-label="我的记录">
+            <svg class="sidebar-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <circle cx="12" cy="12" r="5"/>
+              <circle cx="12" cy="12" r="1.25"/>
+            </svg>
+            <span class="sidebar-nav-label">我的记录</span>
+            <span class="sidebar-nav-tooltip" role="tooltip">我的记录</span>
+          </button>
+          <div class="sidebar-nav-children hidden" id="historyNavItems" aria-hidden="true" aria-label="评估记录"></div>
           <button type="button" class="sidebar-nav-item" data-tab="insights" aria-label="洞察">
             <img src="/static/images/nav/chart.png" width="20" height="20" alt="" class="sidebar-nav-icon-img" />
             <span class="sidebar-nav-label">洞察</span>
             <span class="sidebar-nav-tooltip" role="tooltip">洞察</span>
+          </button>
+          <button type="button" class="sidebar-nav-item only-admin hidden" data-tab="admin-data" aria-label="平台数据">
+            <svg class="sidebar-nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <ellipse cx="12" cy="5" rx="8" ry="3"/>
+              <path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/>
+              <path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
+            </svg>
+            <span class="sidebar-nav-label">平台数据</span>
+            <span class="sidebar-nav-tooltip" role="tooltip">平台数据</span>
           </button>
         </nav>
 
@@ -170,7 +129,7 @@
             </span>
             <span class="sidebar-profile-text">
               <span class="sidebar-profile-name" id="sidebarProfileName">未设置</span>
-              <span class="sidebar-profile-sub" id="sidebarProfileSub">家庭版 · 请完善儿童信息</span>
+              <span class="sidebar-profile-sub" id="sidebarProfileSub">请填写儿童信息</span>
             </span>
             <svg class="sidebar-profile-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -217,12 +176,6 @@
           <p id="mainSub">先看完全部图卡，录下孩子的讲述，完成后到「我的记录」查看报告</p>
         </div>
         <div class="app-page-head-actions">
-          <div class="story-toggle story-toggle--head" id="storyCards" role="tablist" aria-label="选择故事">
-            <button type="button" class="story-toggle-btn active" data-story="cat" role="tab" aria-selected="true">小猫</button>
-            <button type="button" class="story-toggle-btn" data-story="dog" role="tab" aria-selected="false">小狗</button>
-            <button type="button" class="story-toggle-btn" data-story="bird" role="tab" aria-selected="false">小鸟</button>
-            <button type="button" class="story-toggle-btn" data-story="goat" role="tab" aria-selected="false">小羊</button>
-          </div>
           <button
             type="button"
             class="btn-ask-narro hidden only-user"
@@ -231,9 +184,10 @@
             aria-controls="narroChatDrawer"
           >
             <span class="btn-ask-narro-icon" aria-hidden="true">+</span>
-            问一问 Narro
+            问一问金声玉叙
           </button>
-          <button type="button" class="btn-outline btn-sm refresh-history-btn only-user history-refresh-head" id="historyRefreshHeadBtn">刷新</button>
+          <button type="button" class="btn-outline btn-sm refresh-history-btn history-refresh-head" id="historyRefreshHeadBtn">刷新</button>
+          <button type="button" class="btn-outline btn-sm admin-data-refresh-head only-admin hidden" id="adminDataRefreshHeadBtn">刷新</button>
         </div>
       </header>
       <div class="app-main-panels" id="tabPanelsRoot">
@@ -243,13 +197,15 @@
               <video
                 class="pn-agent-hero-video"
                 id="pnAgentHeroVideo"
-                src="/static/videos/pn-agent/tongyu-zhice.webm"
                 autoplay
                 loop
                 muted
                 playsinline
                 preload="auto"
-              ></video>
+              >
+                <source src="/static/videos/pn-agent/xiaole-idle.webm" type="video/webm" />
+                <source src="/static/videos/pn-agent/xiaole-idle.mp4" type="video/mp4" />
+              </video>
             </div>
             <div class="pn-agent-call-ui" id="pnAgentCallUi">
               <p class="pn-agent-call-status sr-only" id="pnAgentCallStatus" aria-live="polite">通话未开始</p>
@@ -286,7 +242,8 @@
               <p class="sr-only" id="storyPrompt"></p>
 
               <div id="storyViewer" class="story-viewer">
-                <div class="naro-mascot-stage" id="naroMascotStage">
+                <!-- 临时隐藏 MAIN 页小乐形象；恢复时去掉 hidden -->
+                <div class="naro-mascot-stage hidden" id="naroMascotStage">
                   <button
                     type="button"
                     class="naro-mascot xiaole-mascot"
@@ -320,20 +277,42 @@
                   <p class="story-warmup-title">先跟小乐打个招呼</p>
                   <p class="story-warmup-desc">图卡一直在，说准备好了我们就开始</p>
                 </div>
+                <div class="story-viewer-toolbar">
+                  <div class="story-toggle story-toggle--viewer" id="storyCards" role="tablist" aria-label="选择故事">
+                    <button type="button" class="story-toggle-btn active" data-story="cat" role="tab" aria-selected="true">小猫</button>
+                    <button type="button" class="story-toggle-btn" data-story="dog" role="tab" aria-selected="false">小狗</button>
+                    <button type="button" class="story-toggle-btn" data-story="bird" role="tab" aria-selected="false">小鸟</button>
+                    <button type="button" class="story-toggle-btn" data-story="goat" role="tab" aria-selected="false">小羊</button>
+                  </div>
+                </div>
                 <div class="story-viewer-stage" id="storyViewerStage">
                   <div class="story-nav-cell">
                     <button type="button" class="story-nav-btn story-nav-btn-side" id="storyPrevBtn" aria-label="上一页">‹</button>
                     <span class="story-nav-label">上一页</span>
                   </div>
                   <div class="story-viewer-img-wrap" id="storyImgWrap">
-                    <img id="storyPanelImg" src="/static/stories/cat/panel-01.jpg" alt="故事图卡" class="story-viewer-img" />
+                    <div class="story-viewer-spread">
+                      <div class="story-viewer-page story-viewer-page--left">
+                        <div class="story-viewer-page-media">
+                          <img id="storyPanelImgLeft" src="/static/stories/cat/panel-01.jpg" alt="故事图卡 1" class="story-viewer-img" />
+                        </div>
+                        <p class="story-page-number tabular-nums" id="storyPanelNumberLeft">1</p>
+                      </div>
+                      <div class="story-viewer-spine" aria-hidden="true"></div>
+                      <div class="story-viewer-page story-viewer-page--right">
+                        <div class="story-viewer-page-media">
+                          <img id="storyPanelImgRight" src="/static/stories/cat/panel-02.jpg" alt="故事图卡 2" class="story-viewer-img" />
+                        </div>
+                        <p class="story-page-number tabular-nums" id="storyPanelNumberRight">2</p>
+                      </div>
+                    </div>
                   </div>
                   <div class="story-nav-cell">
                     <button type="button" class="story-nav-btn story-nav-btn-side" id="storyNextBtn" aria-label="下一页">›</button>
                     <span class="story-nav-label">下一页</span>
                   </div>
                 </div>
-                <p class="story-page-indicator tabular-nums" id="storyPanelIndicator">1 / 6</p>
+                <p class="sr-only tabular-nums" id="storyPanelIndicator" aria-live="polite">第 1–2 页，共 6 页</p>
 
               </div>
             </section>
@@ -495,6 +474,57 @@
           <p class="mt-4 text-sm text-muted-foreground" id="loadingMsg">正在分析…</p>
         </div>
 
+        <!-- 平台数据（仅管理员） -->
+        <section class="tab-panel tab-scroll only-admin hidden" id="panel-admin-data">
+          <div class="history-panel-shell w-full space-y-4">
+            <div id="adminDataSummary" class="text-sm text-muted-foreground"></div>
+            <div class="profile-tabs" role="tablist" aria-label="平台数据分类">
+              <button type="button" class="profile-tab-btn active" id="adminDataTabUsers" data-admin-data-tab="users" role="tab" aria-selected="true" aria-controls="adminDataPanelUsers">注册用户</button>
+              <button type="button" class="profile-tab-btn" id="adminDataTabRecords" data-admin-data-tab="records" role="tab" aria-selected="false" aria-controls="adminDataPanelRecords">使用记录</button>
+            </div>
+            <div id="adminDataPanelUsers" class="profile-tab-panel w-full" data-admin-data-panel="users" role="tabpanel" aria-labelledby="adminDataTabUsers">
+              <div class="rounded-lg border overflow-x-auto history-user-table-shell">
+                <table class="table-ui w-full history-user-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>邮箱</th>
+                      <th>昵称</th>
+                      <th>儿童</th>
+                      <th>儿童 ID</th>
+                      <th>年龄</th>
+                      <th>记录数</th>
+                      <th>注册时间</th>
+                      <th>最近使用</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminUsersBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="adminDataPanelRecords" class="profile-tab-panel w-full hidden" data-admin-data-panel="records" role="tabpanel" aria-labelledby="adminDataTabRecords">
+              <div class="rounded-lg border overflow-x-auto history-user-table-shell">
+                <table class="table-ui w-full history-user-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>用户</th>
+                      <th>儿童</th>
+                      <th>类型</th>
+                      <th>故事</th>
+                      <th>状态</th>
+                      <th>宏观 SC</th>
+                      <th>微观 SS</th>
+                      <th>时间</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminRecordsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- 管理后台（仅管理人员） -->
         <section class="tab-panel tab-scroll p-6" id="panel-admin">
           <div class="max-w-5xl mx-auto space-y-6">
@@ -518,8 +548,8 @@
         </section>
 
         <!-- 历史记录 -->
-        <section class="tab-panel tab-scroll p-6" id="panel-history">
-          <div id="historyPanelShell" class="history-panel-shell space-y-4">
+        <section class="tab-panel tab-scroll" id="panel-history">
+          <div id="historyPanelShell" class="history-panel-shell">
             <h2 class="text-lg font-semibold hidden only-manager">历史记录</h2>
 
             <div class="only-user w-full" id="historyUserListWrap">
@@ -527,13 +557,10 @@
                 <table class="table-ui w-full history-user-table">
                   <thead>
                     <tr>
-                      <th class="w-16">#</th>
                       <th>记录</th>
                       <th>类型</th>
                       <th>日期</th>
-                      <th>宏观 SS</th>
-                      <th>状态</th>
-                      <th class="w-48"></th>
+                      <th class="text-right"></th>
                     </tr>
                   </thead>
                   <tbody id="historyUserBody"></tbody>
@@ -673,7 +700,7 @@
               id="narroChatDrawer"
               class="narro-chat-rail hidden"
               aria-hidden="true"
-              aria-label="问一问 Narro"
+              aria-label="问一问金声玉叙"
             >
               <div
                 class="narro-chat-rail-resizer"
@@ -686,7 +713,7 @@
               <div class="narro-chat-rail-inner" role="complementary" aria-labelledby="narroChatDrawerTitle">
                 <header class="narro-chat-drawer-head">
                   <div class="min-w-0">
-                    <h2 class="narro-chat-drawer-title" id="narroChatDrawerTitle">问一问 Narro</h2>
+                    <h2 class="narro-chat-drawer-title" id="narroChatDrawerTitle">问一问金声玉叙</h2>
                     <p class="narro-chat-drawer-sub text-xs text-muted-foreground" id="narroChatDrawerContext">基于当前评估记录</p>
                   </div>
                   <button type="button" class="btn-ghost btn-sm narro-chat-drawer-close" id="narroChatDrawerCloseBtn" aria-label="关闭">收起</button>
@@ -699,7 +726,7 @@
                   <p class="narro-chat-hint text-xs text-destructive hidden" id="historyCoachHint"></p>
                   <form class="narro-chat-bar" id="historyNarroChatForm" autocomplete="off">
                     <button type="button" class="narro-chat-bar-icon" id="historyNarroChatAttachBtn" aria-label="更多快捷问题" title="更多快捷问题">+</button>
-                    <input type="text" class="narro-chat-bar-input" id="historyCoachInput" placeholder="问问 Narro…" />
+                    <input type="text" class="narro-chat-bar-input" id="historyCoachInput" placeholder="问问金声玉叙…" />
                     <button type="submit" class="narro-chat-bar-send" id="historyCoachSendBtn" aria-label="发送">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
                     </button>
@@ -719,127 +746,38 @@
         <!-- 个人信息 -->
         <section class="tab-panel tab-scroll profile-page only-user" id="panel-profile">
           <div class="profile-page-inner">
-            <p class="profile-page-lead">
-              档案用于评估与同龄对比，数据保存在本机。
-            </p>
+            <p class="profile-page-lead">用于评估与记录关联，数据保存在本机。</p>
 
-            <div class="profile-tabs" id="profileTabs" role="tablist" aria-label="个人信息分类">
-              <button type="button" class="profile-tab-btn active" data-profile-tab="account" role="tab" aria-selected="true" aria-controls="profilePanelAccount" id="profileTabAccountBtn">账户与安全</button>
-              <button type="button" class="profile-tab-btn" data-profile-tab="child" role="tab" aria-selected="false" aria-controls="profilePanelChild" id="profileTabChildBtn">儿童档案</button>
-            </div>
-
-            <div class="profile-tab-panel" id="profilePanelAccount" data-profile-panel="account" role="tabpanel" aria-labelledby="profileTabAccountBtn">
-              <div class="profile-card" id="profileAccountCard">
-                <p class="profile-card-meta" id="profileAccountEmail">—</p>
-
-                <div class="profile-account-top">
-                  <div class="profile-avatar-block">
-                    <img class="profile-avatar-preview" id="profileAvatarPreview" src="/static/images/avatars/default.svg" width="56" height="56" alt="当前头像" />
-                    <div class="profile-avatar-grid" id="profileAvatarGrid" role="listbox" aria-label="选择头像">
-                      <button type="button" class="profile-avatar-option selected" data-avatar-id="default" aria-label="默认">
-                        <img src="/static/images/avatars/default.svg" alt="" />
-                      </button>
-                      <button type="button" class="profile-avatar-option" data-avatar-id="child-boy" aria-label="男孩">
-                        <img src="/static/images/avatars/child-boy.svg" alt="" />
-                      </button>
-                      <button type="button" class="profile-avatar-option" data-avatar-id="child-girl" aria-label="女孩">
-                        <img src="/static/images/avatars/child-girl.svg" alt="" />
-                      </button>
-                      <button type="button" class="profile-avatar-option" data-avatar-id="caregiver" aria-label="看护人">
-                        <img src="/static/images/avatars/caregiver.svg" alt="" />
-                      </button>
-                    </div>
-                  </div>
-                  <div class="profile-field-grid profile-field-grid--2">
-                    <label class="profile-field">
-                      <span class="profile-field-label">显示昵称</span>
-                      <input type="text" class="input" id="profileDisplayName" maxlength="64" placeholder="侧栏显示名称" />
-                    </label>
-                    <label class="profile-field">
-                      <span class="profile-field-label">手机号（可选）</span>
-                      <input type="tel" class="input" id="profilePhone" maxlength="32" placeholder="联系与找回（演示）" />
-                    </label>
-                  </div>
-                </div>
-
-                <p id="profileAccountHint" class="profile-inline-hint hidden"></p>
-                <div class="profile-actions-row">
-                  <button type="button" class="btn-primary btn-sm" id="profileAccountSaveBtn">保存账户</button>
-                </div>
-
-                <div class="profile-section-divider" aria-hidden="true"></div>
-
-                <h3 class="profile-section-title">修改密码</h3>
-                <form id="profilePasswordForm" class="profile-password-form">
-                  <label class="profile-field">
-                    <span class="profile-field-label sr-only">当前密码</span>
-                    <input type="password" class="input" id="profileCurrentPassword" autocomplete="current-password" placeholder="当前密码" />
-                  </label>
-                  <label class="profile-field">
-                    <span class="profile-field-label sr-only">新密码</span>
-                    <input type="password" class="input" id="profileNewPassword" autocomplete="new-password" minlength="8" placeholder="新密码（至少 8 位）" />
-                  </label>
-                  <button type="submit" class="btn-outline btn-sm profile-password-submit">更新密码</button>
-                </form>
-                <p id="profilePasswordHint" class="profile-inline-hint hidden"></p>
+            <form id="profileForm" class="profile-card">
+              <p class="profile-card-meta" id="profileAccountEmail">—</p>
+              <div class="profile-field-grid profile-field-grid--2">
+                <label class="profile-field">
+                  <span class="profile-field-label">昵称</span>
+                  <input type="text" class="input" id="profileDisplayName" maxlength="64" placeholder="侧栏显示名称" />
+                </label>
+                <label class="profile-field">
+                  <span class="profile-field-label">儿童姓名 <span class="text-destructive">*</span></span>
+                  <input type="text" class="input" id="profileChildName" maxlength="64" placeholder="如：小明" required />
+                </label>
+                <label class="profile-field">
+                  <span class="profile-field-label">儿童 ID（可选）</span>
+                  <input type="text" class="input" id="profileChildId" maxlength="64" placeholder="多次评估请保持一致" />
+                </label>
+                <label class="profile-field">
+                  <span class="profile-field-label">年龄</span>
+                  <select class="input" id="profileAge">
+                    <option value="4">4 岁</option>
+                    <option value="5" selected>5 岁</option>
+                    <option value="6">6 岁</option>
+                  </select>
+                </label>
               </div>
-            </div>
-
-            <div class="profile-tab-panel hidden" id="profilePanelChild" data-profile-panel="child" role="tabpanel" aria-labelledby="profileTabChildBtn" hidden>
-              <form id="profileForm" class="profile-card">
-                <p class="profile-card-meta">侧栏底部将显示昵称与儿童摘要</p>
-                <div class="profile-field-grid profile-field-grid--2">
-                  <label class="profile-field">
-                    <span class="profile-field-label">看护人姓名</span>
-                    <input type="text" class="input" id="profileCaregiverName" maxlength="64" placeholder="如：张女士" autocomplete="name" />
-                  </label>
-                  <label class="profile-field">
-                    <span class="profile-field-label">儿童姓名 / 昵称 <span class="text-destructive">*</span></span>
-                    <input type="text" class="input" id="profileChildName" maxlength="64" placeholder="如：小明" required />
-                  </label>
-                  <label class="profile-field">
-                    <span class="profile-field-label">儿童编号（可选）</span>
-                    <input type="text" class="input" id="profileChildId" maxlength="64" placeholder="园所学号或自编 ID" />
-                  </label>
-                  <label class="profile-field">
-                    <span class="profile-field-label">班级 / 园所（可选）</span>
-                    <input type="text" class="input" id="profileClassName" maxlength="64" placeholder="如：大一班" />
-                  </label>
-                  <label class="profile-field">
-                    <span class="profile-field-label">年龄</span>
-                    <select class="input" id="profileAge">
-                      <option value="4">4 岁</option>
-                      <option value="5" selected>5 岁</option>
-                      <option value="6">6 岁</option>
-                    </select>
-                  </label>
-                  <label class="profile-field">
-                    <span class="profile-field-label">性别</span>
-                    <select class="input" id="profileGender">
-                      <option value="">未填写</option>
-                      <option value="男">男</option>
-                      <option value="女">女</option>
-                    </select>
-                  </label>
-                  <label class="profile-field">
-                    <span class="profile-field-label">留守状态</span>
-                    <select class="input" id="profileLeftBehind">
-                      <option value="0">非留守</option>
-                      <option value="1">留守</option>
-                    </select>
-                  </label>
-                  <label class="profile-field profile-field--span2">
-                    <span class="profile-field-label">备注（可选）</span>
-                    <textarea class="textarea" id="profileNotes" rows="2" maxlength="500" placeholder="其他需要记录的信息"></textarea>
-                  </label>
-                </div>
-                <p id="profileSaveHint" class="profile-inline-hint hidden"></p>
-                <div class="profile-actions-row">
-                  <button type="submit" class="btn-primary btn-sm" id="profileSaveBtn">保存儿童档案</button>
-                  <span class="text-xs text-muted-foreground" id="profileUpdatedAt"></span>
-                </div>
-              </form>
-            </div>
+              <p id="profileSaveHint" class="profile-inline-hint hidden"></p>
+              <div class="profile-actions-row">
+                <button type="submit" class="btn-primary btn-sm" id="profileSaveBtn">保存</button>
+                <span class="text-xs text-muted-foreground" id="profileUpdatedAt"></span>
+              </div>
+            </form>
 
             <div class="profile-page-footer">
               <button type="button" class="btn-outline btn-sm text-destructive border-destructive/40" id="profileLogoutBtn">退出登录</button>

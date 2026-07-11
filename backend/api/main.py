@@ -36,7 +36,7 @@ from security import SecurityMiddleware
 
 WEBSITE_DIR = REPO_ROOT / "website"
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -62,6 +62,12 @@ async def lifespan(app: FastAPI):
     init_db()
     init_personalized_books_db()
     maybe_backfill_record_labels()
+    try:
+        from account_store import ensure_builtin_admin
+
+        ensure_builtin_admin()
+    except Exception as e:
+        logger.warning("内置管理员账号初始化失败: %s", e)
     try:
         from llm_service import is_llm_available
 
@@ -93,7 +99,7 @@ async def lifespan(app: FastAPI):
     logger.info("Narro API 关闭")
 
 
-app = FastAPI(title="Narro 叙事评估", version="POC-1.3", lifespan=lifespan)
+app = FastAPI(title="金声玉叙", version="POC-1.3", lifespan=lifespan)
 app.add_middleware(SecurityMiddleware)
 
 _origins = _cors_origins()
@@ -134,6 +140,14 @@ async def disable_frontend_cache(request, call_next):
         for k, v in _NO_CACHE_HEADERS.items():
             response.headers[k] = v
     return response
+
+
+@app.get("/favicon.ico")
+def favicon():
+    icon = FRONTEND_DIR / "static" / "images" / "narro-icon.png"
+    if not icon.is_file():
+        raise HTTPException(status_code=404)
+    return FileResponse(icon, media_type="image/png")
 
 
 @app.get("/robots.txt")

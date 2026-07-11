@@ -139,19 +139,6 @@
   .sidebar-nav-group-toggle {
     @apply gap-2;
   }
-  /* 分组 header：整行不响应 hover 底色，仅展开箭头有 hover */
-  .sidebar-nav-group-toggle:hover,
-  .sidebar-nav-group-toggle.active,
-  .sidebar-nav-group-toggle.active:hover {
-    background-color: transparent;
-    color: hsl(var(--sidebar-foreground) / 0.8);
-  }
-  #historyNavToggle.sidebar-nav-item:hover,
-  #historyNavToggle.sidebar-nav-item.active,
-  #historyNavToggle.sidebar-nav-item.active:hover {
-    background-color: transparent;
-    color: hsl(var(--sidebar-foreground) / 0.8);
-  }
   .sidebar-nav-chevron-hit {
     @apply inline-flex shrink-0 items-center justify-center rounded-md p-0.5 transition-colors;
     margin-right: -0.125rem;
@@ -225,7 +212,7 @@
     @apply flex h-full min-h-0 w-full bg-background text-foreground;
   }
   .app-sidebar {
-    @apply flex w-[19rem] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200;
+    @apply flex w-[15.5rem] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200;
   }
   .app-sidebar-inner {
     @apply flex min-h-0 flex-1 flex-col p-3;
@@ -396,12 +383,12 @@
   }
   .story-viewer-img-wrap {
     @apply flex flex-1 min-w-0 items-center justify-center p-0 bg-transparent;
-    min-height: min(62vh, 36rem);
-    max-height: min(72vh, 40rem);
+    min-height: min(72vh, 44rem);
+    max-height: min(82vh, 48rem);
   }
   .story-viewer-img {
     @apply block w-full max-w-full object-contain;
-    max-height: min(62vh, 36rem);
+    max-height: min(66vh, 40rem);
   }
   .story-nav-btn {
     @apply shrink-0 h-10 w-10 rounded-full border border-border bg-background text-xl font-medium leading-none text-foreground shadow-sm

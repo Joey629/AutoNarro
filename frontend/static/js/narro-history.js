@@ -49,6 +49,10 @@
     return historyRecordLabelFromDom(evalId);
   }
 
+  function usesUserHistoryUI() {
+    return !!ctx.usesUserHistoryUI?.();
+  }
+
   function hideHistoryDetail() {
     ctx.closeNarroChatDrawer?.();
     $("historyDetailWrap")?.classList.add("hidden");
@@ -60,7 +64,7 @@
     document.querySelectorAll(".history-row-clickable, .history-row-manager-clickable").forEach((tr) =>
       tr.classList.remove("history-row-selected")
     );
-    if (ctx.getPersona?.() === "user") {
+    if (usesUserHistoryUI()) {
       const hasRows = !!$("historyUserBody")?.querySelector("tr[data-eval-id]");
       $("historyUserListWrap")?.classList.toggle("hidden", !hasRows);
       $("historyEmpty")?.classList.toggle("hidden", hasRows);
@@ -82,14 +86,14 @@
 
     $("historyDetailWrap")?.classList.remove("hidden");
     $("historyEmpty")?.classList.add("hidden");
-    if (ctx.getPersona?.() === "user") $("historyUserListWrap")?.classList.add("hidden");
+    if (usesUserHistoryUI()) $("historyUserListWrap")?.classList.add("hidden");
     ctx.setSidebarActive?.("history", data.evaluation_id);
     document.querySelectorAll(".history-row-clickable, .history-row-manager-clickable").forEach((tr) => {
       tr.classList.toggle("history-row-selected", String(tr.dataset.evalId) === String(data.evaluation_id));
     });
     ctx.updateHistoryAskNarroBtn?.();
     ctx.closeNarroChatDrawer?.();
-    if (ctx.getPersona?.() === "user") {
+    if (usesUserHistoryUI()) {
       const title = $("historyTitle")?.textContent?.trim();
       if (title && $("mainSub")) $("mainSub").textContent = title;
     }
@@ -121,25 +125,11 @@
         const label = formatHistoryTableLabel(r, index, total);
         const type = storyPhrase(r.story_type);
         const date = formatHistoryDateShort(r.created_at);
-        const score =
-          r.story_type === "pn-agent"
-            ? r.elapsed_ms
-              ? `${Math.round(Number(r.elapsed_ms) / 1000)}秒`
-              : "通话"
-            : r.micro_sum != null
-              ? `${r.micro_sum}/15`
-              : "—";
-        const status = isEvaluationInProgress(r.status)
-          ? '<span class="history-status-pending">分析中</span>'
-          : '<span class="history-status-done">完成</span>';
         return `<tr class="history-row-clickable${selected ? " history-row-selected" : ""}" data-eval-id="${r.id}">
-        <td class="font-mono text-xs text-muted-foreground">#${r.id}</td>
         <td class="font-medium" data-history-label>${escapeHtml(label)}</td>
         <td>${escapeHtml(type)}</td>
         <td class="whitespace-nowrap">${escapeHtml(date)}</td>
-        <td class="tabular-nums">${score}</td>
-        <td>${status}</td>
-        <td class="whitespace-nowrap">
+        <td class="whitespace-nowrap text-right">
           <button type="button" class="btn-outline btn-sm" data-view-eval="${r.id}">查看</button>
           <button type="button" class="btn-ghost btn-sm" data-history-table-rename="${r.id}">重命名</button>
           <button type="button" class="btn-ghost btn-sm text-destructive" data-history-table-delete="${r.id}">删除</button>
@@ -181,7 +171,7 @@
   function renderHistorySidebarNav(items, { selectedId = null } = {}) {
     const container = $("historyNavItems");
     if (!container) return;
-    if (ctx.getPersona?.() === "user") {
+    if (usesUserHistoryUI()) {
       container.innerHTML = "";
       return;
     }
@@ -227,7 +217,7 @@
   }
 
   async function refreshUserHistoryNav({ highlightEvalId = null } = {}) {
-    if (ctx.getPersona?.() !== "user") return [];
+    if (!usesUserHistoryUI()) return [];
     const tbody = $("historyUserBody");
     const detailOpen = !$("historyDetailWrap")?.classList.contains("hidden");
     if (tbody && !detailOpen) {
@@ -344,7 +334,7 @@
       const row = await ctx.fetchJson(`/api/history/${eid}`);
       const payload = rowToRenderPayload(row);
 
-      if (ctx.getPersona?.() === "user") {
+      if (usesUserHistoryUI()) {
         renderHistoryDetail(payload, row);
         $("historyEmpty")?.classList.add("hidden");
         if (isEvaluationInProgress(row.status)) {
@@ -371,7 +361,7 @@
   async function loadHistory({ evalId = null } = {}) {
     const tbody = $("historyBody");
     const emptyEl = $("historyEmpty");
-    const isUser = ctx.getPersona?.() === "user";
+    const isUser = usesUserHistoryUI();
     const cols = 9;
     const reopenId =
       evalId ||
@@ -386,7 +376,7 @@
       const detailOpen = !$("historyDetailWrap")?.classList.contains("hidden");
       if (!detailOpen && $("historyUserBody")) {
         $("historyUserBody").innerHTML =
-          `<tr><td colspan="7" class="text-muted-foreground">加载中…</td></tr>`;
+          `<tr><td colspan="4" class="text-muted-foreground">加载中…</td></tr>`;
       }
       try {
         const items = await fetchUserHistoryItems();
@@ -402,7 +392,7 @@
         renderHistorySidebarNav([], {});
         if (!detailOpen && $("historyUserBody")) {
           $("historyUserBody").innerHTML =
-            `<tr><td colspan="7">${escapeHtml(e.message || "加载失败")}</td></tr>`;
+            `<tr><td colspan="4">${escapeHtml(e.message || "加载失败")}</td></tr>`;
         }
         if (emptyEl) emptyEl.textContent = e.message || "加载失败";
         if (!detailOpen) emptyEl?.classList.remove("hidden");
@@ -472,7 +462,7 @@
   }
 
   function refreshHistoryClick() {
-    if (ctx.getPersona?.() === "user") {
+    if (usesUserHistoryUI()) {
       const reopenId =
         ctx.getSelectedHistoryEvalId?.() ||
         (!$("historyDetailWrap")?.classList.contains("hidden") ? ctx.getCurrentEvaluationId?.() : null);

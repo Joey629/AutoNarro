@@ -1,4 +1,4 @@
-"""评估记录访问控制：登录用户仅能访问本人或未归属记录。"""
+"""评估记录访问控制：登录用户仅能访问本人记录。"""
 from __future__ import annotations
 
 from fastapi import HTTPException
@@ -11,10 +11,10 @@ def list_filter_user_id(current_user: dict | None) -> int | None:
 
 def evaluation_visible_to_user(row_user_id: int | None, current_user: dict | None) -> bool:
     uid = int((current_user or {}).get("id") or 0)
-    if uid <= 0:
-        return True
     rid = int(row_user_id or 0)
-    return rid in (0, uid)
+    if uid <= 0:
+        return rid <= 0
+    return rid == uid
 
 
 def assert_evaluation_access(row: dict, current_user: dict | None) -> None:

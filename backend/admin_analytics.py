@@ -113,8 +113,10 @@ def compute_alerts(rows: list[dict], norms: dict) -> list[dict]:
         tnw, mlu = core.get("TNW"), core.get("MLU")
 
         for rule in rules.get("alerts", []):
-            rid = rule["id"]
             if rule.get("requires"):
+                continue
+            rid = rule.get("id")
+            if not rid:
                 continue
             hit = False
             op = rule.get("op")
@@ -266,7 +268,7 @@ def user_insights(
     """家长端：汇总评估，呈现长期进步与筛查告警。"""
     rows = _load_all_evaluations(limit=limit)
     if user_id and user_id > 0:
-        rows = [r for r in rows if int(r.get("user_id") or 0) in (0, user_id)]
+        rows = [r for r in rows if int(r.get("user_id") or 0) == user_id]
     if child_id:
         cid = child_id.strip()
         rows = [r for r in rows if (r.get("child_id") or "").strip() == cid]

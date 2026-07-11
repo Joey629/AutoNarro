@@ -11,8 +11,35 @@ from typing import Any, Optional
 from evaluation_store import _db_path, init_db
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_BUILTIN_ADMIN_LOGIN = "admin"
 _SESSION_DAYS = 30
 _PBKDF2_ITERATIONS = 210_000
+
+
+def builtin_admin_login() -> str:
+    import os
+
+    return (os.environ.get("NARRO_ADMIN_LOGIN", "") or _BUILTIN_ADMIN_LOGIN).strip().lower()
+
+
+def builtin_admin_password() -> str:
+    import os
+
+    return os.environ.get("NARRO_ADMIN_PASSWORD", "123456")
+
+
+def _normalize_login_id(email: str) -> str:
+    return (email or "").strip().lower()
+
+
+def _is_valid_login_id(login_id: str) -> bool:
+    if login_id == builtin_admin_login():
+        return True
+    return bool(_EMAIL_RE.match(login_id))
+
+
+def _is_reserved_admin_login(login_id: str) -> bool:
+    return login_id == builtin_admin_login()
 
 
 def _now_iso() -> str:
@@ -79,11 +106,49 @@ def _user_row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
     }
 
 
+def ensure_builtin_admin() -> dict[str, Any]:
+    """确保内置管理员账号存在，密码与配置一致。"""
+    init_db()
+    login_id = builtin_admin_login()
+    password = builtin_admin_password()
+    now = _now_iso()
+    with sqlite3.connect(_db_path()) as conn:
+        conn.row_factory = sqlite3.Row
+        ensure_account_tables(conn)
+        row = conn.execute("SELECT * FROM users WHERE email = ?", (login_id,)).fetchone()
+        pwd_hash = _hash_password(password)
+        if row:
+            conn.execute(
+                """
+                UPDATE users
+                SET password_hash = ?, display_name = ?, updated_at = ?
+                WHERE email = ?
+                """,
+                (pwd_hash, "管理员", now, login_id),
+            )
+            user_id = int(row["id"])
+        else:
+            cur = conn.execute(
+                """
+                INSERT INTO users (
+                    email, password_hash, display_name, avatar_id, phone, created_at, updated_at
+                ) VALUES (?, ?, '管理员', 'default', '', ?, ?)
+                """,
+                (login_id, pwd_hash, now, now),
+            )
+            user_id = int(cur.lastrowid)
+    user = get_user_by_id(user_id)
+    assert user
+    return user
+
+
 def register_user(*, email: str, password: str, display_name: str = "") -> dict[str, Any]:
     init_db()
-    email_clean = (email or "").strip().lower()
-    if not _EMAIL_RE.match(email_clean):
-        raise ValueError("邮箱格式不正确")
+    email_clean = _normalize_login_id(email)
+    if not _is_valid_login_id(email_clean):
+        raise ValueError("账号格式不正确")
+    if _is_reserved_admin_login(email_clean):
+        raise ValueError("该账号不可注册")
     if len(password or "") < 8:
         raise ValueError("密码至少 8 位")
     name = (display_name or "").strip()[:64] or email_clean.split("@")[0][:64]
@@ -107,7 +172,9 @@ def register_user(*, email: str, password: str, display_name: str = "") -> dict[
 
 def authenticate_user(*, email: str, password: str) -> Optional[dict[str, Any]]:
     init_db()
-    email_clean = (email or "").strip().lower()
+    email_clean = _normalize_login_id(email)
+    if _is_reserved_admin_login(email_clean):
+        ensure_builtin_admin()
     with sqlite3.connect(_db_path()) as conn:
         conn.row_factory = sqlite3.Row
         ensure_account_tables(conn)
@@ -115,6 +182,42 @@ def authenticate_user(*, email: str, password: str) -> Optional[dict[str, Any]]:
     if not row or not _verify_password(password, row["password_hash"]):
         return None
     return _user_row_to_dict(row)
+
+
+def login_or_register_user(
+    *,
+    email: str,
+    password: str,
+    display_name: str = "",
+) -> tuple[dict[str, Any], bool]:
+    """已有账号则登录，否则注册。返回 (user, created)。"""
+    init_db()
+    email_clean = _normalize_login_id(email)
+    if not _is_valid_login_id(email_clean):
+        raise ValueError("账号格式不正确")
+
+    if _is_reserved_admin_login(email_clean):
+        ensure_builtin_admin()
+        user = authenticate_user(email=email_clean, password=password)
+        if not user:
+            raise ValueError("邮箱或密码错误")
+        return user, False
+
+    if len(password or "") < 8:
+        raise ValueError("密码至少 8 位")
+
+    with sqlite3.connect(_db_path()) as conn:
+        conn.row_factory = sqlite3.Row
+        ensure_account_tables(conn)
+        row = conn.execute("SELECT * FROM users WHERE email = ?", (email_clean,)).fetchone()
+
+    if row:
+        if not _verify_password(password, row["password_hash"]):
+            raise ValueError("邮箱或密码错误")
+        return _user_row_to_dict(row), False
+
+    user = register_user(email=email, password=password, display_name=display_name)
+    return user, True
 
 
 def create_session(user_id: int) -> str:

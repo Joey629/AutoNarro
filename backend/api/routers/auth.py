@@ -3,11 +3,12 @@ from __future__ import annotations
 
 from api.schemas import (
     AccountUpdateRequest,
+    AuthEnterRequest,
     AuthLoginRequest,
     AuthRegisterRequest,
     ChangePasswordRequest,
 )
-from auth import require_user
+from auth import require_user, public_user
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 router = APIRouter(tags=["auth"])
@@ -34,7 +35,7 @@ def auth_register(body: AuthRegisterRequest):
         raise HTTPException(status_code=400, detail=str(e)) from e
     profile = ensure_profile_for_user(user["id"])
     token = create_session(user["id"])
-    return {"ok": True, "token": token, "user": user, "profile": profile}
+    return {"ok": True, "token": token, "user": public_user(user), "profile": profile}
 
 
 @router.post("/api/auth/login")
@@ -48,7 +49,39 @@ def auth_login(body: AuthLoginRequest):
 
     token = create_session(user["id"])
     profile = get_family_profile_for_user(user["id"])
-    return {"ok": True, "token": token, "user": user, "profile": profile}
+    return {"ok": True, "token": token, "user": public_user(user), "profile": profile}
+
+
+@router.post("/api/auth/enter")
+def auth_enter(body: AuthEnterRequest):
+    """统一入口：已有账号则登录，否则注册后登录。"""
+    from account_store import create_session, login_or_register_user
+    from user_profile_store import ensure_profile_for_user, get_family_profile_for_user
+
+    try:
+        user, created = login_or_register_user(
+            email=body.email,
+            password=body.password,
+            display_name=body.display_name,
+        )
+    except ValueError as e:
+        msg = str(e)
+        status = 401 if msg == "邮箱或密码错误" else 400
+        raise HTTPException(status_code=status, detail=msg) from e
+
+    profile = (
+        ensure_profile_for_user(user["id"])
+        if created
+        else get_family_profile_for_user(user["id"])
+    )
+    token = create_session(user["id"])
+    return {
+        "ok": True,
+        "token": token,
+        "user": public_user(user),
+        "profile": profile,
+        "created": created,
+    }
 
 
 @router.post("/api/auth/logout")
@@ -65,7 +98,7 @@ def auth_me(user: dict = Depends(require_user)):
     from user_profile_store import get_family_profile_for_user
 
     profile = get_family_profile_for_user(user["id"])
-    return {"ok": True, "user": user, "profile": profile}
+    return {"ok": True, "user": public_user(user), "profile": profile}
 
 
 @router.patch("/api/auth/account")
@@ -82,7 +115,7 @@ def auth_update_account(
         updated = update_user_account(user["id"], payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-    return {"ok": True, "user": updated}
+    return {"ok": True, "user": public_user(updated)}
 
 
 @router.post("/api/auth/change-password")
@@ -98,4 +131,4 @@ def auth_change_password(
     if not current:
         raise HTTPException(status_code=400, detail="当前密码不正确")
     updated = update_user_account(user["id"], {"password": body.new_password})
-    return {"ok": True, "user": updated}
+    return {"ok": True, "user": public_user(updated)}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 
 from fastapi import Header, HTTPException
 
@@ -20,6 +21,29 @@ def _user_api_key_expected() -> str:
 
 def _admin_api_key_expected() -> str:
     return os.environ.get("NARRO_ADMIN_API_KEY", "").strip()
+
+
+def admin_emails() -> set[str]:
+    raw = os.environ.get("NARRO_ADMIN_EMAILS", "") or os.environ.get("NARRO_ADMIN_EMAIL", "")
+    return {part.strip().lower() for part in raw.split(",") if part.strip()}
+
+
+def is_admin_user(user: dict | None) -> bool:
+    if not user:
+        return False
+    email = (user.get("email") or "").strip().lower()
+    from account_store import builtin_admin_login
+
+    if email == builtin_admin_login():
+        return True
+    allowed = admin_emails()
+    return email in allowed if allowed else False
+
+
+def public_user(user: dict) -> dict:
+    out = dict(user)
+    out["is_admin"] = is_admin_user(user)
+    return out
 
 
 def optional_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
@@ -68,7 +92,7 @@ def resolve_current_user(
 
         user = get_user_by_token(token)
         if user:
-            return user
+            return public_user(user)
     expected = _user_api_key_expected()
     require = _require_key_enabled()
     if require or expected:
@@ -101,21 +125,42 @@ def require_access(
     return user
 
 
-def require_admin_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
-    """管理端 API：优先 NARRO_ADMIN_API_KEY；未配置时回退 NARRO_API_KEY。"""
-    require = _require_key_enabled()
+def _admin_key_ok(x_api_key: str | None) -> bool:
+    if not x_api_key:
+        return False
     admin = _admin_api_key_expected()
+    if admin and secrets.compare_digest(x_api_key, admin):
+        return True
     user = _user_api_key_expected()
-    if admin:
-        if not x_api_key or x_api_key != admin:
-            raise HTTPException(status_code=403, detail="需要有效管理员 X-API-Key")
-        return
-    if user:
-        if not x_api_key or x_api_key != user:
-            raise HTTPException(status_code=401, detail="无效或缺少 X-API-Key")
-        return
-    if require:
+    if user and not admin and secrets.compare_digest(x_api_key, user):
+        return True
+    return False
+
+
+def require_admin_access(
+    authorization: str | None = Header(default=None),
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> dict:
+    """管理端 API：管理员会话或有效管理员 API Key。"""
+    if _admin_key_ok(x_api_key):
+        return {"id": 0, "email": "", "display_name": "API 管理员", "is_admin": True}
+
+    user = resolve_current_user(authorization, x_api_key)
+    if user and user.get("id", 0) > 0 and is_admin_user(user):
+        return user
+
+    require = _require_key_enabled()
+    if require and not _admin_api_key_expected() and not _user_api_key_expected():
         raise HTTPException(
             status_code=503,
             detail="NARRO_REQUIRE_API_KEY=1 但未设置 NARRO_API_KEY / NARRO_ADMIN_API_KEY",
         )
+    raise HTTPException(status_code=403, detail="需要管理员权限")
+
+
+def require_admin_key(
+    authorization: str | None = Header(default=None),
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> None:
+    """兼容旧依赖：管理员会话或 API Key。"""
+    require_admin_access(authorization=authorization, x_api_key=x_api_key)

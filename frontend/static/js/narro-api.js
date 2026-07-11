@@ -54,7 +54,7 @@
               : "";
       if (res.status === 404 && path.startsWith("/api/auth/")) {
         detail =
-          "认证接口未找到。请用项目根目录执行 python run_web.py 并访问 http://127.0.0.1:8000/platform（需重启服务以加载最新代码）。";
+          "认证接口未找到。请重启 Web 服务以加载最新代码（项目根目录执行 python run_web.py），并访问 /platform。";
       }
       throw new Error(detail || `请求失败 (${res.status})`);
     }
@@ -82,6 +82,40 @@
     return false;
   }
 
+  /** 统一登录/注册；旧部署无 /api/auth/enter 时回退 login → register */
+  async function authEnterOrLegacy({ email, password, display_name = "" }) {
+    try {
+      return await fetchJson("/api/auth/enter", {
+        method: "POST",
+        body: JSON.stringify({ email, password, display_name }),
+      });
+    } catch (err) {
+      const msg = String(err?.message || "");
+      if (!msg.includes("认证接口未找到") && !msg.includes("请求失败 (404)")) {
+        throw err;
+      }
+    }
+    try {
+      return await fetchJson("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+    } catch {
+      try {
+        return await fetchJson("/api/auth/register", {
+          method: "POST",
+          body: JSON.stringify({ email, password, display_name }),
+        });
+      } catch (regErr) {
+        const regMsg = String(regErr?.message || "");
+        if (regMsg.includes("该邮箱已注册")) {
+          throw new Error("邮箱或密码错误");
+        }
+        throw regErr;
+      }
+    }
+  }
+
   global.NarroAPI = {
     API,
     SESSION_KEY,
@@ -89,5 +123,6 @@
     apiAuthHeaders,
     fetchJson,
     verifyAuthApiAvailable,
+    authEnterOrLegacy,
   };
 })(window);
