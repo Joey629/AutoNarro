@@ -1006,10 +1006,10 @@ function renderStoryPanel() {
 
   const leftNum = leftIdx + 1;
   const rightNum = rightIdx + 1;
-  if ($("storyPanelNumberLeft")) $("storyPanelNumberLeft").textContent = String(leftNum);
+  if ($("storyPanelNumberLeft")) $("storyPanelNumberLeft").textContent = `页面${leftNum}`;
   if ($("storyPanelNumberRight")) {
     if (panels[rightIdx]) {
-      $("storyPanelNumberRight").textContent = String(rightNum);
+      $("storyPanelNumberRight").textContent = `页面${rightNum}`;
       $("storyPanelNumberRight").classList.remove("hidden");
     } else {
       $("storyPanelNumberRight").textContent = "";

@@ -100,6 +100,51 @@ sudo cloudflared service start
 
 ---
 
+## 阶段 1.5：Mac 内测常驻（推荐 · 小范围试用）
+
+适合：**本机 + autonarro.com 隧道**，给少量内测用户用。Mac 需**接电源**并**防止休眠**。
+
+### 一键安装（Web 开机自启 + Tunnel 系统服务）
+
+```bash
+cd /path/to/AutoNarro
+bash scripts/mac_daemon_install.sh
+```
+
+会完成：
+
+- `run_web.py` → 用户级 LaunchAgent（`com.autonarro.web`，崩溃自动拉起）
+- `cloudflared tunnel run autonarro` → 用户级 LaunchAgent（`com.autonarro.cloudflared`，无需 sudo）
+- 提示接电源防休眠命令
+
+> **注意：** 不要用 `sudo cloudflared service install <config.yml>`，新版会把路径误当成 token 报错。本脚本使用自定义 LaunchAgent 运行命名隧道。
+
+### 防止熄屏/合盖后断网
+
+**系统设置（推荐）：** 电池 → 接通电源时 → 关闭「自动休眠」/ 防止 Mac 自动进入睡眠。
+
+**终端（接电源 profile，执行一次）：**
+
+```bash
+sudo pmset -c sleep 0 disksleep 0 displaysleep 10
+pmset -g    # 确认 AC 下 sleep 为 0
+```
+
+### 日常命令
+
+```bash
+bash scripts/mac_daemon_status.sh    # 本机 + 公网健康检查
+bash scripts/mac_daemon_uninstall.sh # 卸载常驻
+```
+
+| 现象 | 处理 |
+|------|------|
+| Error 1033 | `bash scripts/mac_daemon_status.sh`；若 tunnel 未运行 → `launchctl kickstart -k gui/$(id -u)/com.autonarro.cloudflared` 或重装 `mac_daemon_install.sh` |
+| 本机 200、公网 1033 | Mac 可能已休眠；唤醒后等 10 秒再试 |
+| 改代码后 | Web 会自动由 LaunchAgent 拉起；若需立刻生效：`launchctl kickstart -k gui/$(id -u)/com.autonarro.web` |
+
+---
+
 ## 无法访问？
 
 | 现象 | 处理 |
